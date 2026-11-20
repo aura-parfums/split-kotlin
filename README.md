@@ -6,7 +6,9 @@ A browser-based Kotlin + Jetpack Compose workspace with a split editor and Andro
 
 - Monaco Kotlin editor on the left.
 - Actual Android Runtime screen capture on the right.
-- Detect zero-argument `@Composable` functions and capture each as an independent preview card (up to 8 per run).
+- Discover zero-argument and supported parameterized Compose previews; capture each as an independent preview card (up to 8 per run).
+- Edit up to 10 Kotlin files in the same starter package.
+- Forward taps and swipes from the preview image to the connected Android device.
 - Debounced preview refresh after the first successful render.
 - Project explorer and build/diagnostic output.
 
@@ -14,7 +16,7 @@ A browser-based Kotlin + Jetpack Compose workspace with a split editor and Andro
 
 The preview uses a local companion runner: it writes the current editor buffer into a starter Android project, compiles it with Gradle, installs it on a connected emulator/device, launches a generated preview Activity for the selected composable, and captures the device screen for the browser.
 
-This is a real Android screen, not an HTML approximation. It is not yet Android Studio's instant Layoutlib preview: each refresh recompiles/relaunches the app. `@Preview` annotations and `PreviewParameter`, touch forwarding, incremental compilation, and multi-file project editing remain on the roadmap.
+This is a real Android screen, not an HTML approximation. The runner discovers `@Preview` functions and supports one `@PreviewParameter` provider for a single parameter. Tap or swipe on the preview to interact with the device. Gradle daemon reuse and build cache improve repeat builds, but each refresh still compiles and relaunches the app; it is not Android Studio's instant Layoutlib preview.
 
 ## Local development
 
