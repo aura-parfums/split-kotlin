@@ -188,7 +188,7 @@ function discoverPreviewTargets(source) {
       targets.push({
         name,
         render: "Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) { " +
-          provider[1] + "().values.take(5).forEach { previewValue -> " + name + "(previewValue) } }",
+          "for (previewValue in " + provider[1] + "().values.take(5)) { " + name + "(previewValue) } }",
       });
       continue;
     }
