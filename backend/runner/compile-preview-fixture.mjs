@@ -33,7 +33,7 @@ fun ParameterizedCiScreen(
 `;
 
 
-const targets = discoverPreviewTargets(mainSource + "\n" + fixture);
+const targets = discoverPreviewTargets(fixture);
 if (!targets.some((target) => target.name === "CiSimpleScreen") ||
     !targets.some((target) => target.name === "ParameterizedCiScreen" && !target.unsupported)) {
   throw new Error("CI preview fixture did not discover both simple and parameterized composables.");
