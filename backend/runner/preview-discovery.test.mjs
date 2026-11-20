@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { discoverPreviewTargets } from "./preview-discovery.mjs";
+import { buildPreviewActivity, discoverPreviewTargets } from "./preview-discovery.mjs";
 
 test("discovers zero-argument composables and default-parameter composables", () => {
   const targets = discoverPreviewTargets(`
@@ -46,4 +46,17 @@ test("does not expose private composables as standalone previews", () => {
     internal fun PublicScreen() {}
   `);
   assert.deepEqual(targets.map((target) => target.name), ["PublicScreen"]);
+});
+
+test("generates a standalone Activity with supported preview branches", () => {
+  const activity = buildPreviewActivity([
+    { name: "HomeScreen", render: "HomeScreen()" },
+    { name: "UserCard", render: "Column { UserCard(UserProvider().values.first()) }" },
+    { name: "UnsupportedScreen", unsupported: true },
+  ], "HomeScreen");
+  assert.match(activity, /class SplitStudioPreviewActivity : ComponentActivity/);
+  assert.match(activity, /"HomeScreen" -> HomeScreen\(\)/);
+  assert.match(activity, /"UserCard" -> Column/);
+  assert.doesNotMatch(activity, /UnsupportedScreen/);
+  assert.match(activity, /else -> HomeScreen\(\)/);
 });
