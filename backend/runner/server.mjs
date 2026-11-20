@@ -178,13 +178,15 @@ function discoverPreviewTargets(source) {
   for (const match of source.matchAll(declaration)) {
     const annotations = match[1] || "";
     const name = match[2];
-    const parameters = match[3].trim();
-    if (!parameters || parameters.split(",").every((parameter) => parameter.includes("="))) {
+    const parameters = match[3].trim().replace(/,\\s*$/, "");
+    const parameterParts = parameters ? parameters.split(",").map((parameter) => parameter.trim()).filter(Boolean) : [];
+    if (!parameters || parameterParts.every((parameter) => parameter.includes("="))) {
       targets.push({ name, render: name + "()" });
       continue;
     }
     const provider = parameters.match(/@PreviewParameter\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)::class(?:\s*,[^)]*)?\s*\)\s*(?:val\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*:/);
-    if (provider && parameters.split(",").length === 1) {
+    const requiredParameters = parameterParts.filter((parameter) => !parameter.includes("="));
+    if (provider && requiredParameters.length === 1) {
       targets.push({
         name,
         render: "Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) { " +
