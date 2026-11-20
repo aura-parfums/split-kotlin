@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     !("projectId" in body) ||
     !("code" in body) ||
     (body as { projectId?: unknown }).projectId !== "hello-compose" ||
-    typeof (body as { code?: unknown }).code !== "string"
+    typeof (body as { code?: unknown }).code !== "string" ||\n    ("screen" in body && typeof (body as { screen?: unknown }).screen !== "string")
   ) {
     return NextResponse.json({ ok: false, error: "Invalid preview request." }, { status: 400 });
   }
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         projectId: "hello-compose",
-        code: (body as { code: string }).code,
+        code: (body as { code: string }).code,\n        screen: (body as { screen?: string }).screen,
       }),
       cache: "no-store",
       signal: AbortSignal.timeout(6 * 60 * 1000),
