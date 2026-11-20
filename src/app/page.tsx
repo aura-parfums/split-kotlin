@@ -118,7 +118,7 @@ export default function Home() {
       setPreviewImage(result.image || result.previews?.[0]?.image || null);
       setPreviewImages(Array.isArray(result.previews) ? result.previews : []);
       setBuildStatus("success");
-      setBuildOutput((result.output || "Gradle build completed.") + "\n\nLIVE PREVIEW UPDATED\nDevice: " + result.device);
+      setBuildOutput((result.output || "Gradle build completed.") + "\n\nLIVE PREVIEW UPDATED\nDevice: " + result.device + (result.truncated ? "\nGallery limited to the first 8 discovered screens." : ""));
     } catch (error) {
       setBuildStatus("error");
       setBuildOutput(error instanceof Error ? error.message : "Unknown preview error.");
