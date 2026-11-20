@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, realpathSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, realpathSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join, resolve, sep } from "node:path";
 
 const HOST = process.env.RUNNER_HOST || "127.0.0.1";
@@ -15,6 +15,14 @@ if (!TOKEN || TOKEN.length < 32) {
 }
 
 mkdirSync(PROJECTS_ROOT, { recursive: true });
+
+function writeFileIfChanged(path, content) {
+  if (existsSync(path) && readFileSync(path, "utf8") === content) return false;
+  writeFileSync(path, content, "utf8");
+  return true;
+}
+
+let lastInstalledApkSignature = null;
 
 function send(res, status, payload) {
   res.writeHead(status, {
@@ -279,14 +287,14 @@ async function createPreview(body, res) {
       "        }\n" +
       "    }\n" +
       "}\n";
-    writeFileSync(sourcePath, source, "utf8");
+    writeFileIfChanged(sourcePath, source);
     const kotlinDir = join(projectDir, "app/src/main/java/com/splitstudio/hello");
     for (const [fileName, fileContent] of fileMap) {
       if (fileName === "MainActivity.kt") continue;
       const normalized = /^package\\s+/m.test(fileContent)
         ? fileContent
         : "package com.splitstudio.hello\\n" + fileContent;
-      writeFileSync(join(kotlinDir, fileName), normalized, "utf8");
+      writeFileIfChanged(join(kotlinDir, fileName), normalized);
     }
 
     const sdk = process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT || "";
@@ -321,7 +329,13 @@ async function createPreview(body, res) {
     }
 
     const serial = devices[0];
-    await runCommand(adb, ["-s", serial, "install", "-r", apk], { env, timeout: 120000 });
+    const apkStat = statSync(apk);
+    const apkSignature = serial + ":" + apkStat.size + ":" + apkStat.mtimeMs;
+    const installedPackage = await runCommand(adb, ["-s", serial, "shell", "pm", "path", "com.splitstudio.hello"], { env, timeout: 15000 });
+    if (lastInstalledApkSignature !== apkSignature || !installedPackage.stdout.includes("package:")) {
+      await runCommand(adb, ["-s", serial, "install", "-r", apk], { env, timeout: 120000 });
+      lastInstalledApkSignature = apkSignature;
+    }
     const previews = [];
     for (const screen of selectedScreens.slice(0, 8)) {
       await runCommand(adb, ["-s", serial, "shell", "am", "force-stop", "com.splitstudio.hello"], { env, timeout: 15000 });
