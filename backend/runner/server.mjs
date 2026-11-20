@@ -380,7 +380,14 @@ async function interactWithDevice(body, res) {
       const y2 = Math.round(body.y2 * height);
       await runCommand(adb, ["-s", serial, "shell", "input", "swipe", String(x), String(y), String(x2), String(y2), "250"], { env, timeout: 10000 });
     }
-    return send(res, 200, { ok: true, action, device: serial });
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, 350));
+    const screenshot = await runBinaryCommand(adb, ["-s", serial, "exec-out", "screencap", "-p"], { env, timeout: 20000 });
+    return send(res, 200, {
+      ok: true,
+      action,
+      device: serial,
+      image: "data:image/png;base64," + screenshot.stdout.toString("base64"),
+    });
   } catch (error) {
     return send(res, 422, { ok: false, error: error.message });
   }
