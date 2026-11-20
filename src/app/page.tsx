@@ -85,6 +85,7 @@ export default function Home() {
   const [running, setRunning] = useState(false);
   const [buildOutput, setBuildOutput] = useState("Live Compose preview is ready to connect. Start the local Android runner and an emulator, then press Preview.");
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewImages, setPreviewImages] = useState<Array<{ screen: string; image: string }>>([]);
   const [autoPreview, setAutoPreview] = useState(true);
   const [selectedScreen, setSelectedScreen] = useState("__all__");
   const previewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -105,7 +106,8 @@ export default function Home() {
       if (!response.ok || !result.ok) {
         throw new Error(result.error || result.buildOutput || "Preview failed.");
       }
-      setPreviewImage(result.image);
+      setPreviewImage(result.image || result.previews?.[0]?.image || null);
+      setPreviewImages(Array.isArray(result.previews) ? result.previews : []);
       setBuildStatus("success");
       setBuildOutput((result.output || "Gradle build completed.") + "\n\nLIVE PREVIEW UPDATED\nDevice: " + result.device);
     } catch (error) {
@@ -249,21 +251,33 @@ export default function Home() {
           </div>
           <div className="device-stage">
             <div className="stage-label"><span>ANDROID EMULATOR</span><span>API 35 · ANDROID 15</span></div>
-            <div className="phone-wrap" style={{ transform: `scale(${previewScale === "100%" ? 1 : 0.85})` }}>
-              <div className="phone">
-                <div className="phone-screen">
-                  {!previewImage && <div className="statusbar"><span>9:41</span><div className="dynamic-island" /><span className="status-icons"><Wifi size={12} /> ▰</span></div>}
-                  {previewImage ? <img className="real-device-capture" src={previewImage} alt="Live Android Compose preview" /> : <div className="android-content">
-                    <div className="android-placeholder-icon"><Code2 size={27} /></div>
-                    <h2>Hello, Android!</h2>
-                    <p>Your Compose UI will appear here<br />when the Android runtime is connected.</p>
-                    <button className="android-demo-button">Get started</button>
-                    <div className="runtime-note"><span className="runtime-dot" /> {buildStatus === "building" ? "Compiling Compose source" : buildStatus === "success" ? "Compose preview ready" : buildStatus === "error" ? "Preview failed — see terminal" : "Waiting for Android device"}</div>
-                  </div>}
-                  {!previewImage && <div className="gesture-bar"><span /></div>}
+            {selectedScreen === "__all__" && previewImages.length > 0 ? (
+              <div className="preview-gallery">
+                {previewImages.map((item) => (
+                  <button className="preview-card" key={item.screen} onClick={() => { setSelectedScreen(item.screen); setPreviewImage(item.image); }}>
+                    <div className="preview-card-image"><img src={item.image} alt={item.screen + " Compose preview"} /></div>
+                    <span className="preview-card-title">{item.screen}</span>
+                    <span className="preview-card-subtitle">Android runtime capture</span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="phone-wrap" style={{ transform: `scale(${previewScale === "100%" ? 1 : 0.85})` }}>
+                <div className="phone">
+                  <div className="phone-screen">
+                    {!previewImage && <div className="statusbar"><span>9:41</span><div className="dynamic-island" /><span className="status-icons"><Wifi size={12} /> ▰</span></div>}
+                    {previewImage ? <img className="real-device-capture" src={previewImage} alt="Live Android Compose preview" /> : <div className="android-content">
+                      <div className="android-placeholder-icon"><Code2 size={27} /></div>
+                      <h2>Hello, Android!</h2>
+                      <p>Your Compose UI will appear here<br />when the Android runtime is connected.</p>
+                      <button className="android-demo-button">Get started</button>
+                      <div className="runtime-note"><span className="runtime-dot" /> {buildStatus === "building" ? "Compiling Compose source" : buildStatus === "success" ? "Compose preview ready" : buildStatus === "error" ? "Preview failed — see terminal" : "Waiting for Android device"}</div>
+                    </div>}
+                    {!previewImage && <div className="gesture-bar"><span /></div>}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
             <div className="preview-footnote"><span className="info-dot">i</span> Real Compose screen captured from your connected Android device.</div>
           </div>
           <div className="device-footer"><span><span className="footer-dot" /> {buildStatus === "success" ? "Live Compose preview connected" : "Android device disconnected"}</span><span>1280 × 2856</span></div>
