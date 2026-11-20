@@ -9,7 +9,7 @@ import {
   Wifi, X, Zap
 } from "lucide-react";
 
-const starterCode = `package com.example.helloworld
+const starterCode = `package com.splitstudio.hello
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -71,29 +71,30 @@ export default function Home() {
   const [bottomOpen, setBottomOpen] = useState(true);
   const [previewScale, setPreviewScale] = useState("100%");
   const [running, setRunning] = useState(false);
-  const [buildOutput, setBuildOutput] = useState("Runner is not connected yet. Configure the local runner to build the checked-in Hello Compose sample.");
+  const [buildOutput, setBuildOutput] = useState("Live Compose preview is ready to connect. Start the local Android runner and an emulator, then press Preview.");\n  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [buildStatus, setBuildStatus] = useState<"idle" | "building" | "success" | "error">("idle");
-  async function runBuild() {
+  async function runPreview() {
     setRunning(true);
     setBuildStatus("building");
     setActiveTab("terminal");
     setBottomOpen(true);
-    setBuildOutput("$ ./gradle :app:assembleDebug\\nStarting local Android build…");
+    setBuildOutput("Compiling current MainActivity.kt…\\nInstalling on connected Android device…\\nCapturing Compose screen…");
     try {
-      const response = await fetch("/api/runner/build", {
+      const response = await fetch("/api/runner/preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId: "hello-compose" }),
+        body: JSON.stringify({ projectId: "hello-compose", code }),
       });
       const result = await response.json();
       if (!response.ok || !result.ok) {
-        throw new Error(result.error || result.output || "Build failed.");
+        throw new Error(result.error || result.buildOutput || "Preview failed.");
       }
+      setPreviewImage(result.image);
       setBuildStatus("success");
-      setBuildOutput((result.output || "Build completed.") + "\\n\\nBUILD SUCCESSFUL\\nAPK: " + result.artifact);
+      setBuildOutput((result.output || "Gradle build completed.") + "\\n\\nLIVE PREVIEW UPDATED\\nDevice: " + result.device);
     } catch (error) {
       setBuildStatus("error");
-      setBuildOutput(error instanceof Error ? error.message : "Unknown build error.");
+      setBuildOutput(error instanceof Error ? error.message : "Unknown preview error.");
     } finally {
       setRunning(false);
     }
@@ -212,7 +213,7 @@ export default function Home() {
               <button className="device-select"><Smartphone size={13} /> Pixel 8 Pro <ChevronDown size={12} /></button>
               <button className="icon-button small" onClick={() => setPreviewScale(previewScale === "100%" ? "85%" : "100%")} aria-label="Change preview scale"><Monitor size={15} /></button>
               <button className="icon-button small" onClick={() => setRunning(false)} aria-label="Refresh preview"><RefreshCw size={14} /></button>
-              <button className="run-button" onClick={runBuild} disabled={running}><Play size={13} fill="currentColor" /> {running ? "Building…" : "Build APK"}</button>
+              <button className="run-button" onClick={runPreview} disabled={running}><Play size={13} fill="currentColor" /> {running ? "Rendering…" : "Preview"}</button>
             </div>
           </div>
           <div className="device-stage">
@@ -221,7 +222,7 @@ export default function Home() {
               <div className="phone">
                 <div className="phone-screen">
                   <div className="statusbar"><span>9:41</span><div className="dynamic-island" /><span className="status-icons"><Wifi size={12} /> ▰</span></div>
-                  <div className="android-content">
+                  {previewImage ? <img className="real-device-capture" src={previewImage} alt="Live Android Compose preview" /> : <div className="android-content">
                     <div className="android-placeholder-icon"><Code2 size={27} /></div>
                     <h2>Hello, Android!</h2>
                     <p>Your Compose UI will appear here<br />when the Android runtime is connected.</p>
@@ -232,9 +233,9 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            <div className="preview-footnote"><span className="info-dot">i</span> Device frame is a workspace placeholder. Real Compose rendering requires the local Android runtime.</div>
+            <div className="preview-footnote"><span className="info-dot">i</span> Real Compose screen captured from your connected Android device.</div>
           </div>
-          <div className="device-footer"><span><span className="footer-dot" /> {buildStatus === "success" ? "APK created · emulator not attached" : "Emulator disconnected"}</span><span>1280 × 2856</span></div>
+          <div className="device-footer"><span><span className="footer-dot" /> {buildStatus === "success" ? "Live Compose preview connected" : "Android device disconnected"}</span><span>1280 × 2856</span></div>
         </section>
       </div>
 
