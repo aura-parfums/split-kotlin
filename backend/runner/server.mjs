@@ -199,7 +199,7 @@ async function createPreview(body, res) {
       "import androidx.compose.ui.unit.dp",
     ];
     let source = body.code;
-    if (!/^package\s+/m.test(source)) source = "package com.splitstudio.hello\\n" + source;
+    if (!/^package\s+/m.test(source)) source = "package com.splitstudio.hello\n" + source;
     const missingImports = requiredImports.filter((line) => !source.split("\n").includes(line));
     const packageLine = source.match(/^package [^\r\n]+/m);
     if (missingImports.length) {
