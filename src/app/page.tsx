@@ -107,7 +107,7 @@ export default function Home() {
         body: JSON.stringify({
           projectId: "hello-compose",
           code: mainCode,
-          files: Object.entries(projectFiles).map(([path, content]) => ({ path, content })),
+          files: Object.entries(projectFiles).filter(([path]) => path !== "MainActivity.kt").map(([path, content]) => ({ path, content })),
           screen: screenOverride ?? (selectedScreen === "__all__" ? "__all__" : previewScreens.includes(selectedScreen) ? selectedScreen : previewScreens[0])
         }),
       });
@@ -188,6 +188,10 @@ export default function Home() {
     const safeName = requested.trim().replace(/\.kt$/i, "");
     if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(safeName)) {
       setBuildOutput("Invalid Kotlin filename. Use letters, numbers, and underscores.");
+      return;
+    }
+    if (Object.keys(projectFiles).length >= 10) {
+      setBuildOutput("This workspace supports up to 10 Kotlin files including MainActivity.kt.");
       return;
     }
     const fileName = safeName + ".kt";
