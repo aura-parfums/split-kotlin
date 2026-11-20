@@ -164,20 +164,58 @@ function runBinaryCommand(command, args, options = {}) {
   });
 }
 
+function discoverPreviewTargets(source) {
+  const targets = [];
+  const declaration = /((?:@[A-Za-z_][A-Za-z0-9_.]*(?:\([^)]*\))?\s*)*)@Composable\s+(?:(?:private|internal)\s+)?fun\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(([^)]*)\)/g;
+  for (const match of source.matchAll(declaration)) {
+    const annotations = match[1] || "";
+    const name = match[2];
+    const parameters = match[3].trim();
+    if (!parameters || parameters.split(",").every((parameter) => parameter.includes("="))) {
+      targets.push({ name, render: name + "()" });
+      continue;
+    }
+    const provider = parameters.match(/@PreviewParameter\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)::class(?:\s*,[^)]*)?\s*\)\s*(?:val\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*:/);
+    if (provider && parameters.split(",").length === 1) {
+      targets.push({
+        name,
+        render: "Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) { " +
+          provider[1] + "().values.take(5).forEach { previewValue -> " + name + "(previewValue) } }",
+      });
+      continue;
+    }
+    if (/@Preview(?:\s*\(|\s|$)/.test(annotations)) {
+      targets.push({ name, unsupported: true });
+    }
+  }
+  const byName = new Map();
+  for (const target of targets) byName.set(target.name, target);
+  return [...byName.values()];
+}
+
 async function createPreview(body, res) {
   try {
     if (typeof body.code !== "string" || body.code.length > 200_000) {
       return send(res, 400, { ok: false, error: "Kotlin source is missing or too large (200 KB max)." });
     }
     const projectDir = getProjectDir(body.projectId);
-    const screenNames = [...body.code.matchAll(/@Composable\s+(?:(?:private|internal)\s+)?fun\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*\)/g)]
-      .map((match) => match[1]);
-    const uniqueScreens = [...new Set(screenNames)];
+    const previewTargets = discoverPreviewTargets(body.code);
+    const uniqueScreens = previewTargets.map((target) => target.name);
     if (!uniqueScreens.length) {
       return send(res, 422, { ok: false, stage: "analysis", error: "No zero-argument @Composable functions were found. Add @Composable fun YourScreen() to preview a screen." });
     }
     const selectedScreen = typeof body.screen === "string" ? body.screen : uniqueScreens[0];
     const selectedScreens = selectedScreen === "__all__" ? uniqueScreens : [selectedScreen];
+    const unsupported = selectedScreens.filter((name) => previewTargets.find((target) => target.name === name)?.unsupported);
+    if (unsupported.length) {
+      return send(res, 422, {
+        ok: false,
+        stage: "analysis",
+        error: "Selected @Preview parameters are not supported. Use one @PreviewParameter provider for a single parameter.",
+        unsupportedScreens: unsupported,
+        availableScreens: uniqueScreens,
+      });
+    }
     if (selectedScreens.some((screen) => !uniqueScreens.includes(screen))) {
       return send(res, 400, { ok: false, stage: "analysis", error: "Selected preview screen was not found in the current Kotlin source.", availableScreens: uniqueScreens });
     }
@@ -217,7 +255,7 @@ async function createPreview(body, res) {
       "        setContent {\n" +
       "            MaterialTheme {\n" +
       "                when (requestedScreen) {\n" +
-      "                    " + uniqueScreens.map((screen) => "\\"" + screen + "\\" -> " + screen + "()").join("\n                    ") + "\n" +
+      "                    " + previewTargets.map((target) => '"' + target.name + '" -> ' + (target.render || target.name + "()")).join("\n                    ") + "\n" +
       "                    else -> " + uniqueScreens[0] + "()\n" +
       "                }\n" +
       "            }\n" +
