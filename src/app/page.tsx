@@ -71,7 +71,8 @@ export default function Home() {
   const [bottomOpen, setBottomOpen] = useState(true);
   const [previewScale, setPreviewScale] = useState("100%");
   const [running, setRunning] = useState(false);
-  const [buildOutput, setBuildOutput] = useState("Live Compose preview is ready to connect. Start the local Android runner and an emulator, then press Preview.");\n  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [buildOutput, setBuildOutput] = useState("Live Compose preview is ready to connect. Start the local Android runner and an emulator, then press Preview.");
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [buildStatus, setBuildStatus] = useState<"idle" | "building" | "success" | "error">("idle");
   async function runPreview() {
     setRunning(true);
