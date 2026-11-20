@@ -287,6 +287,10 @@ async function createPreview(body, res) {
       const normalized = /^package\s+/m.test(fileContent)
         ? fileContent
         : "package com.splitstudio.hello\n" + fileContent;
+      const filePackage = normalized.match(/^package\s+([^\r\n]+)/m)?.[1]?.trim();
+      if (filePackage !== "com.splitstudio.hello") {
+        return send(res, 422, { ok: false, stage: "analysis", error: fileName + " must use package com.splitstudio.hello." });
+      }
       writeFileIfChanged(join(kotlinDir, fileName), normalized);
     }
 
