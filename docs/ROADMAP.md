@@ -7,32 +7,30 @@
 - [x] Device-frame workspace placeholder
 - [x] Terminal / Problems panel
 
-## Milestone 2 — Local build foundation
+## Milestone 2 — Real Compose screen preview foundation
 - [x] Starter Android app using Jetpack Compose
 - [x] Local runner bound to loopback by default
-- [x] Token-protected, fixed-task Gradle build endpoint
-- [x] Next.js server-side proxy; runner token stays server-side
-- [x] Workspace build action and Gradle output panel
+- [x] Token-protected fixed-project preview endpoint
+- [x] Synchronize current MainActivity.kt editor buffer to starter project
+- [x] Compile and install to first connected Android device
+- [x] Capture actual device screen and display it in the browser
+- [x] Debounced Auto refresh after the first successful manual preview
 
-## Milestone 3 — Real editor-to-project synchronization
-- [ ] Persist editor buffers to files under a sandboxed project directory
-- [ ] Read the project tree from the backend instead of hard-coded UI data
-- [ ] Add file creation, rename, and delete with path validation
-- [ ] Build the exact saved project state, not the checked-in starter snapshot
+## Milestone 3 — Android Studio-style preview experience
+- [ ] Support multiple `@Preview` composables and a preview gallery
+- [ ] Preview parameter sets, themes, font scales, and device configurations
+- [ ] Faster incremental rendering and error overlays
+- [ ] Forward taps and gestures from browser preview to emulator
+- [ ] Support multiple Activities / navigation destinations
+- [ ] Device selector and orientation controls
 
-## Milestone 4 — Device execution and preview
-- [ ] Detect installed Android SDKs and available ADB devices
-- [ ] Install the generated APK on a selected emulator/device
-- [ ] Stream emulator frames into the preview panel
-- [ ] Add logcat and device lifecycle controls
-- [ ] Implement debounced build/install workflow
+## Milestone 4 — Full project workspace
+- [ ] Read project tree from backend instead of hard-coded UI data
+- [ ] Open and save multiple Kotlin/XML/Gradle files
+- [ ] Create, rename, and delete files with path validation
+- [ ] Persist project files and user projects
+- [ ] Kotlin language server, diagnostics, completion, and navigation
 
-## Milestone 5 — Kotlin developer experience
-- [ ] Kotlin language server / diagnostics integration
-- [ ] Compose-aware completion and navigation
-- [ ] Build variants, dependency management, and Gradle task explorer
-- [ ] Export APK and project archive
+## Important technical distinction
 
-## Important truth in product UI
-
-A browser-rendered phone frame is not a Compose preview. The preview remains explicitly labeled as a placeholder until a real emulator/device frame stream is connected. Likewise, the current Build APK action compiles the checked-in `hello-compose` starter project; it does not yet compile unsaved Monaco editor changes.
+The current preview is a real screenshot from Android Runtime, not a fake HTML rendering. It currently recompiles and relaunches the starter app to refresh, so it is slower than Android Studio's native Compose Preview. It supports the current Activity source buffer, not a gallery of every `@Preview` annotation yet.
