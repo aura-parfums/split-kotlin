@@ -196,10 +196,27 @@ function discoverPreviewTargets(source) {
 async function createPreview(body, res) {
   try {
     if (typeof body.code !== "string" || body.code.length > 200_000) {
-      return send(res, 400, { ok: false, error: "Kotlin source is missing or too large (200 KB max)." });
+      return send(res, 400, { ok: false, error: "MainActivity.kt is missing or too large (200 KB max)." });
     }
     const projectDir = getProjectDir(body.projectId);
-    const previewTargets = discoverPreviewTargets(body.code);
+    const submittedFiles = Array.isArray(body.files) ? body.files : [];
+    if (submittedFiles.length > 10) {
+      return send(res, 400, { ok: false, error: "A maximum of 10 Kotlin files can be previewed at once." });
+    }
+    const fileMap = new Map([["MainActivity.kt", body.code]]);
+    for (const file of submittedFiles) {
+      if (!file || typeof file.path !== "string" || !/^[A-Za-z_][A-Za-z0-9_]*\\.kt$/.test(file.path) ||
+          typeof file.content !== "string" || file.content.length > 200_000) {
+        return send(res, 400, { ok: false, error: "Each file must have a safe Kotlin filename and source content under 200 KB." });
+      }
+      fileMap.set(file.path, file.content);
+    }
+    const totalSourceBytes = [...fileMap.values()].reduce((total, value) => total + Buffer.byteLength(value, "utf8"), 0);
+    if (totalSourceBytes > 1024 * 1024) {
+      return send(res, 400, { ok: false, error: "Combined Kotlin source exceeds the 1 MB preview limit." });
+    }
+    const combinedSource = [...fileMap.values()].join("\\n");
+    const previewTargets = discoverPreviewTargets(combinedSource);
     const uniqueScreens = previewTargets.map((target) => target.name);
     if (!uniqueScreens.length) {
       return send(res, 422, { ok: false, stage: "analysis", error: "No zero-argument @Composable functions were found. Add @Composable fun YourScreen() to preview a screen." });
@@ -263,6 +280,14 @@ async function createPreview(body, res) {
       "    }\n" +
       "}\n";
     writeFileSync(sourcePath, source, "utf8");
+    const kotlinDir = join(projectDir, "app/src/main/java/com/splitstudio/hello");
+    for (const [fileName, fileContent] of fileMap) {
+      if (fileName === "MainActivity.kt") continue;
+      const normalized = /^package\\s+/m.test(fileContent)
+        ? fileContent
+        : "package com.splitstudio.hello\\n" + fileContent;
+      writeFileSync(join(kotlinDir, fileName), normalized, "utf8");
+    }
 
     const sdk = process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT || "";
     const env = {
