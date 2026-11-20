@@ -29,3 +29,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 
 .real-device-capture{display:block;width:100%;height:100%;object-fit:contain;background:#000}
 .build-output{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;overflow:auto}
+
+.auto-preview-toggle{display:inline-flex;align-items:center;gap:5px;color:#a7a7ae;font-size:10px;letter-spacing:.04em;cursor:pointer;user-select:none}
+.auto-preview-toggle input{accent-color:#d8d8dc;width:12px;height:12px;margin:0}
+.real-device-capture{width:100%;height:100%;object-fit:contain;background:#000}
