@@ -33,3 +33,6 @@ button{font:inherit;color:inherit;cursor:pointer}
 .auto-preview-toggle{display:inline-flex;align-items:center;gap:5px;color:#a7a7ae;font-size:10px;letter-spacing:.04em;cursor:pointer;user-select:none}
 .auto-preview-toggle input{accent-color:#d8d8dc;width:12px;height:12px;margin:0}
 .real-device-capture{width:100%;height:100%;object-fit:contain;background:#000}
+
+.preview-screen-select{max-width:145px;height:27px;padding:0 7px;border:1px solid #34343a;border-radius:5px;background:#17171b;color:#d7d7dc;font-size:10px;outline:none}
+.preview-screen-select:focus{border-color:#777780}
