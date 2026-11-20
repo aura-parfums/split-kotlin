@@ -31,7 +31,7 @@ test("discovers PreviewParameter providers with nested annotation arguments", ()
     @Preview
     @Composable
     fun NamedUserCard(
-      @PreviewParameter(provider = NamedUserProvider::class) user: User
+      @PreviewParameter(provider = NamedUserProvider::class, name = "user") user: User
     ) {}
   `);
   assert.equal(namedProvider[0]?.name, "NamedUserCard");
