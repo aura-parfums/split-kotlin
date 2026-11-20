@@ -18,6 +18,11 @@ class CiSampleProvider : PreviewParameterProvider<String> {
     override val values = sequenceOf("one", "two")
 }
 
+@Composable
+fun CiSimpleScreen() {
+    Text("CI preview")
+}
+
 @Preview(showBackground = true)
 @Composable
 fun ParameterizedCiScreen(
@@ -27,16 +32,7 @@ fun ParameterizedCiScreen(
 }
 `;
 
-const mainSource = `package com.splitstudio.hello
 
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-
-@Composable
-fun CiSimpleScreen() {
-    Text("CI preview")
-}
-`;
 const targets = discoverPreviewTargets(mainSource + "\n" + fixture);
 if (!targets.some((target) => target.name === "CiSimpleScreen") ||
     !targets.some((target) => target.name === "ParameterizedCiScreen" && !target.unsupported)) {
