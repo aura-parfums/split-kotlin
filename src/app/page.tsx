@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Editor from "@monaco-editor/react";
 import {
   Activity, AppWindow, ChevronDown, ChevronRight, Code2, Command,
@@ -57,7 +57,7 @@ const files = [
   { name: "manifests", kind: "folder", depth: 1 },
   { name: "AndroidManifest.xml", kind: "xml", depth: 2 },
   { name: "kotlin + java", kind: "folder", depth: 1 },
-  { name: "com.example.helloworld", kind: "folder", depth: 2 },
+  { name: "com.splitstudio.hello", kind: "folder", depth: 2 },
   { name: "MainActivity.kt", kind: "kotlin", depth: 3, active: true },
   { name: "res", kind: "folder", depth: 1 },
   { name: "Gradle Scripts", kind: "folder", depth: 0 },
@@ -72,7 +72,7 @@ export default function Home() {
   const [previewScale, setPreviewScale] = useState("100%");
   const [running, setRunning] = useState(false);
   const [buildOutput, setBuildOutput] = useState("Live Compose preview is ready to connect. Start the local Android runner and an emulator, then press Preview.");
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);\n  const [autoPreview, setAutoPreview] = useState(true);\n  const previewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [buildStatus, setBuildStatus] = useState<"idle" | "building" | "success" | "error">("idle");
   async function runPreview() {
     setRunning(true);
@@ -98,6 +98,16 @@ export default function Home() {
       setBuildOutput(error instanceof Error ? error.message : "Unknown preview error.");
     } finally {
       setRunning(false);
+    }
+  }
+  function handleEditorChange(value: string | undefined) {
+    const nextCode = value ?? "";
+    setCode(nextCode);
+    if (autoPreview && previewImage) {
+      if (previewTimer.current) clearTimeout(previewTimer.current);
+      previewTimer.current = setTimeout(() => {
+        void runPreview();
+      }, 1400);
     }
   }
   const lineCount = useMemo(() => code.split("\n").length, [code]);
@@ -169,7 +179,7 @@ export default function Home() {
               language="kotlin"
               theme="vs-dark"
               value={code}
-              onChange={(value) => setCode(value ?? "")}
+              onChange={handleEditorChange}
               options={{
                 minimap: { enabled: true, scale: 1 },
                 fontSize: 13,
@@ -211,7 +221,7 @@ export default function Home() {
           <div className="preview-header">
             <div className="preview-title"><Smartphone size={16} /><strong>PREVIEW</strong><span className="live-pill"><span /> DEVICE</span></div>
             <div className="preview-actions">
-              <button className="device-select"><Smartphone size={13} /> Pixel 8 Pro <ChevronDown size={12} /></button>
+              <label className="auto-preview-toggle"><input type="checkbox" checked={autoPreview} onChange={(event) => setAutoPreview(event.target.checked)} /> Auto</label><button className="device-select"><Smartphone size={13} /> Connected device <ChevronDown size={12} /></button>
               <button className="icon-button small" onClick={() => setPreviewScale(previewScale === "100%" ? "85%" : "100%")} aria-label="Change preview scale"><Monitor size={15} /></button>
               <button className="icon-button small" onClick={() => setRunning(false)} aria-label="Refresh preview"><RefreshCw size={14} /></button>
               <button className="run-button" onClick={runPreview} disabled={running}><Play size={13} fill="currentColor" /> {running ? "Rendering…" : "Preview"}</button>
