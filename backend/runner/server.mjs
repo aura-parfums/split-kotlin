@@ -70,7 +70,7 @@ function readProjectFiles(projectId) {
   const kotlinDir = join(projectDir, "app/src/main/java/com/splitstudio/hello");
   if (!existsSync(kotlinDir)) return [];
   return readdirSync(kotlinDir, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && /^[A-Za-z_][A-Za-z0-9_]*\\.kt$/.test(entry.name) && entry.name !== "SplitStudioPreviewActivity.kt")
+    .filter((entry) => entry.isFile() && /^[A-Za-z_][A-Za-z0-9_]*\.kt$/.test(entry.name) && entry.name !== "SplitStudioPreviewActivity.kt")
     .sort((a, b) => a.name.localeCompare(b.name))
     .map((entry) => ({ path: entry.name, content: readFileSync(join(kotlinDir, entry.name), "utf8") }));
 }
