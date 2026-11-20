@@ -170,7 +170,7 @@ async function createPreview(body, res) {
       return send(res, 400, { ok: false, error: "Kotlin source is missing or too large (200 KB max)." });
     }
     const projectDir = getProjectDir(body.projectId);
-    const screenNames = [...body.code.matchAll(/@Composable\\s+(?:(?:private|internal)\\s+)?fun\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*\\(\\s*\\)/g)]
+    const screenNames = [...body.code.matchAll(/@Composable\s+(?:(?:private|internal)\s+)?fun\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*\)/g)]
       .map((match) => match[1]);
     const uniqueScreens = [...new Set(screenNames)];
     if (!uniqueScreens.length) {
@@ -189,17 +189,17 @@ async function createPreview(body, res) {
       "import androidx.compose.material3.MaterialTheme",
     ];
     let source = body.code;
-    const missingImports = requiredImports.filter((line) => !source.split("\\n").includes(line));
-    const packageLine = source.match(/^package [^\\r\\n]+/m);
+    const missingImports = requiredImports.filter((line) => !source.split("\n").includes(line));
+    const packageLine = source.match(/^package [^\r\n]+/m);
     if (missingImports.length) {
       if (packageLine) {
-        const insertAt = source.indexOf("\\n", packageLine.index) + 1;
-        source = source.slice(0, insertAt) + missingImports.join("\\n") + "\\n" + source.slice(insertAt);
+        const insertAt = source.indexOf("\n", packageLine.index) + 1;
+        source = source.slice(0, insertAt) + missingImports.join("\n") + "\n" + source.slice(insertAt);
       } else {
-        source = missingImports.join("\\n") + "\\n" + source;
+        source = missingImports.join("\n") + "\n" + source;
       }
     }
-    source += `\\n
+    source += `\n
 class SplitStudioPreviewActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
