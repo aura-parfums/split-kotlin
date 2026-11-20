@@ -2,7 +2,7 @@
 
 Split Kotlin Studio is a browser IDE, but real Jetpack Compose rendering requires Android's runtime. The local runner compiles the current editor buffer, installs the debug app on a connected Android emulator/device, launches it, and captures the actual device screen for the browser preview.
 
-This is a device-backed preview loop, not Android Studio's in-process Layoutlib preview. The editor detects zero-argument `@Composable` functions and provides a screen selector. Choose one function for an individual preview, or choose **All screens** to render every detected function in a vertically scrollable Android preview host. A refresh takes time because the app must compile and launch. After the first manual Preview, Auto refresh debounces edits and reruns the selected screen.
+This is a device-backed preview loop, not Android Studio's in-process Layoutlib preview. The editor detects zero-argument `@Composable` functions and provides a screen selector. Choose one function for an individual preview, or choose **All screens** to capture each detected function separately and display the results as independent gallery cards (up to 8 screens per run). A refresh takes time because the app must compile and launch. After the first manual Preview, Auto refresh debounces edits and reruns the selected screen.
 
 ## Requirements
 
@@ -60,5 +60,5 @@ Open `http://localhost:3000`, start an emulator (or connect a USB-debugging-enab
 - The runner binds to loopback and accepts a fixed project ID and source buffer, not arbitrary shell commands.
 - The runner token is server-side only. Do not expose it through a `NEXT_PUBLIC_*` variable.
 - Keep the runner private; do not expose port 4317 to the public internet.
-- This initial version previews one Activity in the checked-in `hello-compose` project. It does not yet provide Android Studio's multi-@Preview gallery, instant in-process recomposition, touch forwarding, project/file management, or language-server diagnostics.
+- This initial version previews one Activity in the checked-in `hello-compose` project. It does not yet parse Android Studio `@Preview` annotations or `PreviewParameter`, forward touch events from the browser, use incremental/in-process recomposition, manage multiple Kotlin files, or provide language-server diagnostics.
 - The Next.js server and local runner must run on the same computer. A remotely hosted website cannot reach your computer's localhost through its server-side API route.
