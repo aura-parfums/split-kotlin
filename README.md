@@ -8,6 +8,7 @@ A browser-based Kotlin + Jetpack Compose workspace with a split editor and Andro
 - Actual Android Runtime screen capture on the right.
 - Discover zero-argument and supported parameterized Compose previews; capture each as an independent preview card (up to 8 per run).
 - Edit up to 10 Kotlin files in the same starter package.
+- Restore local runner files on startup and keep an automatic browser-local draft.
 - Forward taps and swipes from the preview image to the connected Android device.
 - Debounced preview refresh after the first successful render.
 - Project explorer and build/diagnostic output.
