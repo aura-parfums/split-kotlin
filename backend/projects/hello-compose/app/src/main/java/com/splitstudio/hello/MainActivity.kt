@@ -49,3 +49,15 @@ private fun GreetingScreen() {
         }
     }
 }
+
+@Composable
+private fun ProfileScreen() {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text("Your profile")
+        Text("This is a second screen preview.")
+    }
+}
