@@ -135,6 +135,7 @@ export default function Home() {
       });
       const result = await response.json();
       if (!response.ok || !result.ok) throw new Error(result.error || "Device interaction failed.");
+      if (typeof result.image === "string") setPreviewImage(result.image);
     } catch (error) {
       setBuildOutput(error instanceof Error ? error.message : "Device interaction failed.");
     }
