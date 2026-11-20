@@ -203,7 +203,7 @@ async function createPreview(body, res) {
     const fileMap = new Map([["MainActivity.kt", body.code]]);
     for (const file of submittedFiles) {
       if (!file || typeof file.path !== "string" || !/^[A-Za-z_][A-Za-z0-9_]*\.kt$/.test(file.path) ||
-          file.path === "SplitStudioPreviewActivity.kt" ||
+          (file.path === "SplitStudioPreviewActivity.kt" || file.path === "MainActivity.kt") ||
           typeof file.content !== "string" || file.content.length > 200_000) {
         return send(res, 400, { ok: false, error: "Each file must have a safe Kotlin filename and source content under 200 KB." });
       }
