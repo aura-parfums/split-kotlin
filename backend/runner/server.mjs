@@ -284,7 +284,7 @@ async function createPreview(body, res) {
     const previewTargets = discoverPreviewTargets(combinedSource);
     const uniqueScreens = previewTargets.map((target) => target.name);
     if (!uniqueScreens.length) {
-      return send(res, 422, { ok: false, stage: "analysis", error: "No zero-argument @Composable functions were found. Add @Composable fun YourScreen() to preview a screen." });
+      return send(res, 422, { ok: false, stage: "analysis", error: "No supported Compose preview functions were found. Add a zero-argument @Composable or a single @PreviewParameter-backed function." });
     }
     const selectedScreen = typeof body.screen === "string" ? body.screen : uniqueScreens[0];
     const requestedScreens = selectedScreen === "__all__" ? uniqueScreens : [selectedScreen];
@@ -421,6 +421,7 @@ async function createPreview(body, res) {
       availableScreens: uniqueScreens,
       selectedScreen,
       renderedScreens: previews.map((item) => item.screen),
+      skippedUnsupportedScreens: unsupported,
       truncated: selectedScreens.length > 8,
     });
   } catch (error) {
