@@ -157,7 +157,16 @@ export default function Home() {
     }
     setProjectFiles((current) => ({
       ...current,
-      [fileName]: "package com.splitstudio.hello\n\nimport androidx.compose.material3.Text\nimport androidx.compose.runtime.Composable\n\n@Composable\nfun " + safeName + "() {\n    Text(\"New Compose screen\")\n}\n"
+      [fileName]: `package com.splitstudio.hello
+
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+
+@Composable
+fun ${safeName}() {
+    Text("New Compose screen")
+}
+`
     }));
     setActiveFile(fileName);
   }
