@@ -38,9 +38,11 @@ cd backend/runner
 npm start
 ```
 
-Terminal 2 — from the repository root, start the web IDE with the same environment:
+Terminal 2 — from the repository root, export the **same token** for the Next.js API proxy, then start the web IDE:
 
 ```bash
+export RUNNER_TOKEN="<paste-the-same-token-here>"
+export RUNNER_URL=http://127.0.0.1:4317
 npm run dev
 ```
 
