@@ -47,7 +47,7 @@ export async function POST(request: Request) {
         code: (body as { code: string }).code,
         screen: (body as { screen?: string }).screen,
         files: Array.isArray((body as { files?: unknown }).files)
-          ? (body as { files: Array<{ path: string; content: string }> }).files
+          ? ((body as unknown as { files?: Array<{ path: string; content: string }> }).files ?? [])
           : [],
       }),
       cache: "no-store",
