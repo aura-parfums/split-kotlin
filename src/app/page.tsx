@@ -114,7 +114,7 @@ export default function Home() {
     }
   }
   const previewScreens = useMemo(() => {
-    const found = [...code.matchAll(/@Composable\\s+(?:(?:private|internal)\\s+)?fun\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*\\(\\s*\\)/g)]
+    const found = [...code.matchAll(/@Composable\s+(?:(?:private|internal)\s+)?fun\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*\)/g)]
       .map((match) => match[1]);
     return [...new Set(found)];
   }, [code]);
