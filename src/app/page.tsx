@@ -80,50 +80,53 @@ const files = [
 export default function Home() {
   const workspaceStorageKey = "split-kotlin:hello-compose:files";
   const [projectFiles, setProjectFiles] = useState<Record<string, string>>({ "MainActivity.kt": starterCode });
+  const [workspaceReady, setWorkspaceReady] = useState(false);
   const workspaceTouched = useRef(false);
-  const workspaceInitialized = useRef(false);
   const [activeFile, setActiveFile] = useState("MainActivity.kt");
   useEffect(() => {
-    if (!workspaceInitialized.current) {
-      workspaceInitialized.current = true;
-      return;
-    }
+    if (!workspaceReady) return;
     try {
       localStorage.setItem(workspaceStorageKey, JSON.stringify(projectFiles));
     } catch {
       setBuildOutput("Could not persist the workspace in browser storage. Export your Kotlin files before leaving.");
     }
-  }, [projectFiles]);
+  }, [projectFiles, workspaceReady]);
   useEffect(() => {
     let cancelled = false;
     async function restoreWorkspace() {
-      if (workspaceTouched.current) return;
       try {
         const saved = localStorage.getItem(workspaceStorageKey);
         const parsed = saved ? JSON.parse(saved) as Record<string, unknown> : null;
         if (parsed && typeof parsed["MainActivity.kt"] === "string" &&
             Object.values(parsed).every((value) => typeof value === "string")) {
           if (!cancelled && !workspaceTouched.current) setProjectFiles(parsed as Record<string, string>);
+          if (!cancelled) setWorkspaceReady(true);
           return;
         }
       } catch {
         // Ignore malformed local drafts and try the local runner instead.
       }
-      if (cancelled || workspaceTouched.current) return;
+      if (cancelled || workspaceTouched.current) {
+        if (!cancelled) setWorkspaceReady(true);
+        return;
+      }
       try {
         const response = await fetch("/api/runner/files", { cache: "no-store" });
         const result = await response.json();
-        if (cancelled || workspaceTouched.current || !result.ok || !Array.isArray(result.files) || !result.files.length) return;
-        const restored = Object.fromEntries(
-          result.files
-            .filter((file: { path?: unknown; content?: unknown }) =>
-              typeof file.path === "string" && /^[A-Za-z_][A-Za-z0-9_]*\.kt$/.test(file.path) &&
-              file.path !== "SplitStudioPreviewActivity.kt" && typeof file.content === "string")
-            .map((file: { path: string; content: string }) => [file.path, file.content])
-        ) as Record<string, string>;
-        if (typeof restored["MainActivity.kt"] === "string") setProjectFiles(restored);
+        if (!cancelled && !workspaceTouched.current && result.ok && Array.isArray(result.files) && result.files.length) {
+          const restored = Object.fromEntries(
+            result.files
+              .filter((file: { path?: unknown; content?: unknown }) =>
+                typeof file.path === "string" && /^[A-Za-z_][A-Za-z0-9_]*\.kt$/.test(file.path) &&
+                file.path !== "SplitStudioPreviewActivity.kt" && typeof file.content === "string")
+              .map((file: { path: string; content: string }) => [file.path, file.content])
+          ) as Record<string, string>;
+          if (typeof restored["MainActivity.kt"] === "string") setProjectFiles(restored);
+        }
       } catch {
         // The starter remains available while the local runner is offline.
+      } finally {
+        if (!cancelled) setWorkspaceReady(true);
       }
     }
     void restoreWorkspace();
@@ -217,6 +220,7 @@ export default function Home() {
   function handleEditorChange(value: string | undefined) {
     const nextCode = value ?? "";
     workspaceTouched.current = true;
+    setWorkspaceReady(true);
     setProjectFiles((current) => ({ ...current, [activeFile]: nextCode }));
     if (autoPreview && previewImage) {
       if (previewTimer.current) clearTimeout(previewTimer.current);
@@ -254,6 +258,7 @@ export default function Home() {
       return;
     }
     workspaceTouched.current = true;
+    setWorkspaceReady(true);
     setProjectFiles((current) => ({
       ...current,
       [fileName]: `package com.splitstudio.hello
