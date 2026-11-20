@@ -96,17 +96,17 @@ export default function Home() {
     }
     return { "MainActivity.kt": starterCode };
   });
-  const hasLocalDraft = useRef(false);
-  if (typeof window !== "undefined" && !hasLocalDraft.current) {
+  const [hasLocalDraft] = useState(() => {
+    if (typeof window === "undefined") return false;
     try {
       const saved = localStorage.getItem(workspaceStorageKey);
       const parsed = saved ? JSON.parse(saved) as Record<string, unknown> : null;
-      hasLocalDraft.current = Boolean(parsed && typeof parsed["MainActivity.kt"] === "string" &&
+      return Boolean(parsed && typeof parsed["MainActivity.kt"] === "string" &&
         Object.values(parsed).every((value) => typeof value === "string"));
     } catch {
-      hasLocalDraft.current = false;
+      return false;
     }
-  }
+  });
   const workspaceTouched = useRef(false);
   const [activeFile, setActiveFile] = useState("MainActivity.kt");
   useEffect(() => {
@@ -117,7 +117,7 @@ export default function Home() {
     }
   }, [projectFiles]);
   useEffect(() => {
-    if (hasLocalDraft.current) return;
+    if (hasLocalDraft) return;
     let cancelled = false;
     fetch("/api/runner/files", { cache: "no-store" })
       .then((response) => response.json())
@@ -136,7 +136,7 @@ export default function Home() {
         // The starter and browser draft remain available while the local runner is offline.
       });
     return () => { cancelled = true; };
-  }, []);
+  }, [hasLocalDraft]);
   const code = projectFiles[activeFile] ?? "";
   const mainCode = projectFiles["MainActivity.kt"] ?? "";
   const [activeTab, setActiveTab] = useState<"problems" | "terminal">("terminal");
