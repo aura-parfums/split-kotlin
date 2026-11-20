@@ -75,7 +75,7 @@ function readProjectFiles(projectId) {
     .map((entry) => {
       let content = readFileSync(join(kotlinDir, entry.name), "utf8");
       if (entry.name === "MainActivity.kt") {
-        content = content.replace(/\\nclass SplitStudioPreviewActivity : ComponentActivity\\(\\) \\{[\\s\\S]*?\\n\\}\\s*$/, "\\n");
+        content = content.replace(/\nclass SplitStudioPreviewActivity : ComponentActivity\(\) \{[\s\S]*?\n\}\s*$/, "\n");
       }
       return { path: entry.name, content };
     });
