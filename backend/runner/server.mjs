@@ -208,8 +208,8 @@ async function createPreview(body, res) {
     }
     const projectDir = getProjectDir(body.projectId);
     const submittedFiles = Array.isArray(body.files) ? body.files : [];
-    if (submittedFiles.length > 10) {
-      return send(res, 400, { ok: false, error: "A maximum of 10 Kotlin files can be previewed at once." });
+    if (submittedFiles.length > 9) {
+      return send(res, 400, { ok: false, error: "A maximum of 10 Kotlin files including MainActivity.kt can be previewed at once." });
     }
     const fileMap = new Map([["MainActivity.kt", body.code]]);
     for (const file of submittedFiles) {
