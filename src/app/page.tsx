@@ -222,15 +222,15 @@ export default function Home() {
             <div className="phone-wrap" style={{ transform: `scale(${previewScale === "100%" ? 1 : 0.85})` }}>
               <div className="phone">
                 <div className="phone-screen">
-                  <div className="statusbar"><span>9:41</span><div className="dynamic-island" /><span className="status-icons"><Wifi size={12} /> ▰</span></div>
+                  {!previewImage && <div className="statusbar"><span>9:41</span><div className="dynamic-island" /><span className="status-icons"><Wifi size={12} /> ▰</span></div>}
                   {previewImage ? <img className="real-device-capture" src={previewImage} alt="Live Android Compose preview" /> : <div className="android-content">
                     <div className="android-placeholder-icon"><Code2 size={27} /></div>
                     <h2>Hello, Android!</h2>
                     <p>Your Compose UI will appear here<br />when the Android runtime is connected.</p>
                     <button className="android-demo-button">Get started</button>
-                    <div className="runtime-note"><span className="runtime-dot" /> {buildStatus === "building" ? "Building starter project" : buildStatus === "success" ? "APK build successful" : buildStatus === "error" ? "Build failed — see terminal" : "Waiting for local build"}</div>
-                  </div>
-                  <div className="gesture-bar"><span /></div>
+                    <div className="runtime-note"><span className="runtime-dot" /> {buildStatus === "building" ? "Compiling Compose source" : buildStatus === "success" ? "Compose preview ready" : buildStatus === "error" ? "Preview failed — see terminal" : "Waiting for Android device"}</div>
+                  </div>}
+                  {!previewImage && <div className="gesture-bar"><span /></div>}
                 </div>
               </div>
             </div>
