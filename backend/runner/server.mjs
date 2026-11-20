@@ -177,7 +177,8 @@ async function createPreview(body, res) {
       return send(res, 422, { ok: false, stage: "analysis", error: "No zero-argument @Composable functions were found. Add @Composable fun YourScreen() to preview a screen." });
     }
     const selectedScreen = typeof body.screen === "string" ? body.screen : uniqueScreens[0];
-    if (!uniqueScreens.includes(selectedScreen)) {
+    const selectedScreens = selectedScreen === "__all__" ? uniqueScreens : [selectedScreen];
+    if (selectedScreens.some((screen) => !uniqueScreens.includes(screen))) {
       return send(res, 400, { ok: false, stage: "analysis", error: "Selected preview screen was not found in the current Kotlin source.", availableScreens: uniqueScreens });
     }
 
@@ -187,6 +188,12 @@ async function createPreview(body, res) {
       "import androidx.activity.ComponentActivity",
       "import androidx.activity.compose.setContent",
       "import androidx.compose.material3.MaterialTheme",
+      "import androidx.compose.foundation.layout.Box",
+      "import androidx.compose.foundation.layout.fillMaxWidth",
+      "import androidx.compose.foundation.layout.height",
+      "import androidx.compose.foundation.rememberScrollState",
+      "import androidx.compose.foundation.verticalScroll",
+      "import androidx.compose.ui.unit.dp",
     ];
     let source = body.code;
     const missingImports = requiredImports.filter((line) => !source.split("\n").includes(line));
@@ -205,7 +212,9 @@ class SplitStudioPreviewActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme {
-                ${selectedScreen}()
+                Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                    ${selectedScreens.map((screen) => "Box(modifier = Modifier.fillMaxWidth().height(720.dp)) { " + screen + "() }").join("\n                    ")}
+                }
             }
         }
     }
@@ -258,6 +267,7 @@ class SplitStudioPreviewActivity : ComponentActivity() {
       image: `data:image/png;base64,${image}`,
       output: build.stdout.slice(-50000),
       message: "Selected Compose screen rendered on the connected Android device.",\n      availableScreens: uniqueScreens,\n      selectedScreen,
+      renderedScreens: selectedScreens,
     });
   } catch (error) {
     return send(res, 422, { ok: false, stage: "build-or-device", error: error.message });
