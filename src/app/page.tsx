@@ -194,6 +194,10 @@ export default function Home() {
       setBuildOutput("This workspace supports up to 10 Kotlin files including MainActivity.kt.");
       return;
     }
+    if (safeName === "SplitStudioPreviewActivity") {
+      setBuildOutput("SplitStudioPreviewActivity.kt is reserved for the preview runtime.");
+      return;
+    }
     const fileName = safeName + ".kt";
     if (projectFiles[fileName]) {
       setActiveFile(fileName);
