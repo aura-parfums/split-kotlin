@@ -360,14 +360,14 @@ async function interactWithDevice(body, res) {
     const env = { ...process.env, ANDROID_HOME: sdk, ANDROID_SDK_ROOT: sdk };
     const adb = sdk ? join(sdk, "platform-tools", process.platform === "win32" ? "adb.exe" : "adb") : "adb";
     const devicesResult = await runCommand(adb, ["devices"], { env, timeout: 15000 });
-    const devices = devicesResult.stdout.split("\\n").slice(1)
-      .map((line) => line.trim().split(/\\s+/))
+    const devices = devicesResult.stdout.split("\n").slice(1)
+      .map((line) => line.trim().split(/\s+/))
       .filter((parts) => parts.length >= 2 && parts[1] === "device")
       .map((parts) => parts[0]);
     if (!devices.length) return send(res, 409, { ok: false, error: "No Android device is connected." });
     const serial = devices[0];
     const sizeResult = await runCommand(adb, ["-s", serial, "shell", "wm", "size"], { env, timeout: 10000 });
-    const match = sizeResult.stdout.match(/(\\d+)x(\\d+)/);
+    const match = sizeResult.stdout.match(/(\d+)x(\d+)/);
     if (!match) return send(res, 422, { ok: false, error: "Could not read Android display dimensions." });
     const width = Number(match[1]);
     const height = Number(match[2]);
