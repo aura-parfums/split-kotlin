@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent } from "react";
 import Editor from "@monaco-editor/react";
 import {
   Activity, AppWindow, ChevronDown, ChevronRight, Code2, Command,
@@ -78,8 +78,55 @@ const files = [
 ];
 
 export default function Home() {
-  const [projectFiles, setProjectFiles] = useState<Record<string, string>>({ "MainActivity.kt": starterCode });
+  const workspaceStorageKey = "split-kotlin:hello-compose:files";
+  const [projectFiles, setProjectFiles] = useState<Record<string, string>>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem(workspaceStorageKey);
+        if (saved) {
+          const parsed = JSON.parse(saved) as Record<string, unknown>;
+          if (parsed && typeof parsed["MainActivity.kt"] === "string" &&
+              Object.values(parsed).every((value) => typeof value === "string")) {
+            return parsed as Record<string, string>;
+          }
+        }
+      } catch {
+        // Ignore malformed local drafts and use the starter project.
+      }
+    }
+    return { "MainActivity.kt": starterCode };
+  });
+  const hasLocalDraft = useRef(typeof window !== "undefined" && Boolean(localStorage.getItem(workspaceStorageKey)));
+  const workspaceTouched = useRef(false);
   const [activeFile, setActiveFile] = useState("MainActivity.kt");
+  useEffect(() => {
+    try {
+      localStorage.setItem(workspaceStorageKey, JSON.stringify(projectFiles));
+    } catch {
+      setBuildOutput("Could not persist the workspace in browser storage. Export your Kotlin files before leaving.");
+    }
+  }, [projectFiles]);
+  useEffect(() => {
+    if (hasLocalDraft.current) return;
+    let cancelled = false;
+    fetch("/api/runner/files", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((result) => {
+        if (cancelled || workspaceTouched.current || !result.ok || !Array.isArray(result.files) || !result.files.length) return;
+        const restored = Object.fromEntries(
+          result.files
+            .filter((file: { path?: unknown; content?: unknown }) =>
+              typeof file.path === "string" && /^[A-Za-z_][A-Za-z0-9_]*\\.kt$/.test(file.path) &&
+              file.path !== "SplitStudioPreviewActivity.kt" && typeof file.content === "string")
+            .map((file: { path: string; content: string }) => [file.path, file.content])
+        ) as Record<string, string>;
+        if (typeof restored["MainActivity.kt"] === "string") setProjectFiles(restored);
+      })
+      .catch(() => {
+        // The starter and browser draft remain available while the local runner is offline.
+      });
+    return () => { cancelled = true; };
+  }, []);
   const code = projectFiles[activeFile] ?? "";
   const mainCode = projectFiles["MainActivity.kt"] ?? "";
   const [activeTab, setActiveTab] = useState<"problems" | "terminal">("terminal");
@@ -167,6 +214,7 @@ export default function Home() {
 
   function handleEditorChange(value: string | undefined) {
     const nextCode = value ?? "";
+    workspaceTouched.current = true;
     setProjectFiles((current) => ({ ...current, [activeFile]: nextCode }));
     if (autoPreview && previewImage) {
       if (previewTimer.current) clearTimeout(previewTimer.current);
@@ -203,6 +251,7 @@ export default function Home() {
       setActiveFile(fileName);
       return;
     }
+    workspaceTouched.current = true;
     setProjectFiles((current) => ({
       ...current,
       [fileName]: `package com.splitstudio.hello
