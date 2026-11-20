@@ -6,7 +6,7 @@ import {
   Activity, AppWindow, ChevronDown, ChevronRight, Code2, Command,
   FileCode2, Folder, GitBranch, Monitor, MoreHorizontal,
   Play, RefreshCw, Search, Settings2, Smartphone,
-  Wifi, X, Zap
+  Wifi, X, Zap, Plus
 } from "lucide-react";
 
 const starterCode = `package com.splitstudio.hello
@@ -78,7 +78,10 @@ const files = [
 ];
 
 export default function Home() {
-  const [code, setCode] = useState(starterCode);
+  const [projectFiles, setProjectFiles] = useState<Record<string, string>>({ "MainActivity.kt": starterCode });
+  const [activeFile, setActiveFile] = useState("MainActivity.kt");
+  const code = projectFiles[activeFile] ?? "";
+  const mainCode = projectFiles["MainActivity.kt"] ?? "";
   const [activeTab, setActiveTab] = useState<"problems" | "terminal">("terminal");
   const [bottomOpen, setBottomOpen] = useState(true);
   const [previewScale, setPreviewScale] = useState("100%");
@@ -100,7 +103,12 @@ export default function Home() {
       const response = await fetch("/api/runner/preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId: "hello-compose", code, screen: screenOverride ?? (selectedScreen === "__all__" ? "__all__" : previewScreens.includes(selectedScreen) ? selectedScreen : previewScreens[0]) }),
+        body: JSON.stringify({
+          projectId: "hello-compose",
+          code: mainCode,
+          files: Object.entries(projectFiles).map(([path, content]) => ({ path, content })),
+          screen: screenOverride ?? (selectedScreen === "__all__" ? "__all__" : previewScreens.includes(selectedScreen) ? selectedScreen : previewScreens[0])
+        }),
       });
       const result = await response.json();
       if (!response.ok || !result.ok) {
@@ -119,7 +127,7 @@ export default function Home() {
   }
   function handleEditorChange(value: string | undefined) {
     const nextCode = value ?? "";
-    setCode(nextCode);
+    setProjectFiles((current) => ({ ...current, [activeFile]: nextCode }));
     if (autoPreview && previewImage) {
       if (previewTimer.current) clearTimeout(previewTimer.current);
       previewTimer.current = setTimeout(() => {
@@ -128,11 +136,31 @@ export default function Home() {
     }
   }
   const previewScreens = (() => {
-    const found = [...code.matchAll(/@Composable\s+(?:(?:private|internal)\s+)?fun\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(/g)]
+    const found = [...Object.values(projectFiles).join("\\n").matchAll(/@Composable\s+(?:(?:private|internal)\s+)?fun\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(/g)]
       .map((match) => match[1]);
     return [...new Set(found)];
   })();
   const lineCount = code.split("\n").length;
+  const explorerFiles = [...files, ...Object.keys(projectFiles).filter((name) => name !== "MainActivity.kt").map((name) => ({ name, kind: "kotlin", depth: 3, active: false }))];
+  function addKotlinFile() {
+    const requested = window.prompt("New Kotlin file name (without .kt):", "NewScreen");
+    if (!requested) return;
+    const safeName = requested.trim().replace(/\\.kt$/i, "");
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(safeName)) {
+      setBuildOutput("Invalid Kotlin filename. Use letters, numbers, and underscores.");
+      return;
+    }
+    const fileName = safeName + ".kt";
+    if (projectFiles[fileName]) {
+      setActiveFile(fileName);
+      return;
+    }
+    setProjectFiles((current) => ({
+      ...current,
+      [fileName]: "package com.splitstudio.hello\\n\\nimport androidx.compose.material3.Text\\nimport androidx.compose.runtime.Composable\\n\\n@Composable\\nfun " + safeName + "() {\\n    Text(\\"New Compose screen\\")\\n}\\n"
+    }));
+    setActiveFile(fileName);
+  }
 
   return (
     <main className="studio">
@@ -169,8 +197,8 @@ export default function Home() {
           <div className="pane-heading"><span>EXPLORER</span><MoreHorizontal size={16} /></div>
           <div className="project-title"><ChevronDown size={13} /><span>MY COMPOSE APP</span><MoreHorizontal size={15} /></div>
           <div className="file-tree">
-            {files.map((file, index) => (
-              <div key={index} className={`file-row ${file.active ? "selected" : ""}`} style={{ paddingLeft: 10 + file.depth * 14 }}>
+            {explorerFiles.map((file, index) => (
+              <div key={index} className={`file-row ${file.name === activeFile ? "selected" : ""}`} onClick={() => { if (projectFiles[file.name]) setActiveFile(file.name); }} style={{ paddingLeft: 10 + file.depth * 14 }}>
                 {file.kind === "folder" ? <><ChevronRight size={13} /><Folder size={14} className="folder-icon" /></> :
                   file.kind === "kotlin" ? <FileCode2 size={14} className="kt-icon" /> :
                   <FileCode2 size={14} className="file-icon" />}
@@ -186,11 +214,14 @@ export default function Home() {
 
         <section className="editor-panel">
           <div className="editor-tabs">
-            <div className="editor-tab active"><FileCode2 size={14} className="kt-icon" /> MainActivity.kt <X size={13} /></div>
-            <div className="editor-tab muted"><span>build.gradle.kts</span></div>
-            <div className="editor-tab-actions"><MoreHorizontal size={17} /></div>
+            {Object.keys(projectFiles).map((fileName) => (
+              <button key={fileName} className={`editor-tab ${activeFile === fileName ? "active" : "muted"}`} onClick={() => setActiveFile(fileName)}>
+                <FileCode2 size={14} className="kt-icon" /> {fileName}
+              </button>
+            ))}
+            <div className="editor-tab-actions"><button className="icon-button small" onClick={addKotlinFile} aria-label="Add Kotlin file"><Plus size={15} /></button><MoreHorizontal size={17} /></div>
           </div>
-          <div className="breadcrumbs"><span>app</span><ChevronRight size={12} /><span>src</span><ChevronRight size={12} /><span>main</span><ChevronRight size={12} /><span>java</span><ChevronRight size={12} /><strong>MainActivity.kt</strong></div>
+          <div className="breadcrumbs"><span>app</span><ChevronRight size={12} /><span>src</span><ChevronRight size={12} /><span>main</span><ChevronRight size={12} /><span>java</span><ChevronRight size={12} /><strong>{activeFile}</strong></div>
           <div className="editor-toolbar">
             <div className="editor-language"><span className="kotlin-badge">K</span> Kotlin <ChevronDown size={12} /></div>
             <div className="editor-tools"><span>UTF-8</span><span>Spaces: 4</span><span>LF</span><button aria-label="Editor options"><MoreHorizontal size={16} /></button></div>
