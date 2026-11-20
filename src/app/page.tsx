@@ -96,7 +96,17 @@ export default function Home() {
     }
     return { "MainActivity.kt": starterCode };
   });
-  const hasLocalDraft = useRef(typeof window !== "undefined" && Boolean(localStorage.getItem(workspaceStorageKey)));
+  const hasLocalDraft = useRef(false);
+  if (typeof window !== "undefined" && !hasLocalDraft.current) {
+    try {
+      const saved = localStorage.getItem(workspaceStorageKey);
+      const parsed = saved ? JSON.parse(saved) as Record<string, unknown> : null;
+      hasLocalDraft.current = Boolean(parsed && typeof parsed["MainActivity.kt"] === "string" &&
+        Object.values(parsed).every((value) => typeof value === "string"));
+    } catch {
+      hasLocalDraft.current = false;
+    }
+  }
   const workspaceTouched = useRef(false);
   const [activeFile, setActiveFile] = useState("MainActivity.kt");
   useEffect(() => {
