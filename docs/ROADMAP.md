@@ -38,4 +38,4 @@
 
 ## Important technical distinction
 
-The current preview is a real screenshot from Android Runtime, not a fake HTML rendering. It currently recompiles and relaunches the starter app to refresh, so it is slower than Android Studio's native Compose Preview. It supports multiple Kotlin source files, discovered `@Preview` functions, and one `@PreviewParameter` provider per function; full preview configuration matrices and non-Kotlin project files remain future work.
+The current preview is a real screenshot from Android Runtime, not a fake HTML rendering. It runs an incremental Gradle build when source changes and relaunches the starter Activity to refresh, so it is slower than Android Studio's native Compose Preview. It supports multiple Kotlin source files, discovered `@Preview` functions, and one `@PreviewParameter` provider per function; full preview configuration matrices and non-Kotlin project files remain future work.
