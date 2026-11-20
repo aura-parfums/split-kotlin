@@ -82,3 +82,39 @@ export function discoverPreviewTargets(source) {
   for (const target of targets) byName.set(target.name, target);
   return [...byName.values()];
 }
+
+export function buildPreviewActivity(targets, fallbackScreen) {
+  const supportedTargets = targets.filter((target) => !target.unsupported);
+  const branches = supportedTargets
+    .map((target) => `                    "${target.name}" -> ${target.render || target.name + "()"}`)
+    .join("\n");
+  return [
+    "package com.splitstudio.hello",
+    "",
+    "import android.os.Bundle",
+    "import androidx.activity.ComponentActivity",
+    "import androidx.activity.compose.setContent",
+    "import androidx.compose.material3.MaterialTheme",
+    "import androidx.compose.foundation.layout.Column",
+    "import androidx.compose.foundation.layout.fillMaxSize",
+    "import androidx.compose.foundation.rememberScrollState",
+    "import androidx.compose.foundation.verticalScroll",
+    "import androidx.compose.ui.Modifier",
+    "",
+    "class SplitStudioPreviewActivity : ComponentActivity() {",
+    "    override fun onCreate(savedInstanceState: Bundle?) {",
+    "        super.onCreate(savedInstanceState)",
+    "        val requestedScreen = intent.getStringExtra(\"splitstudio.screen\")",
+    "        setContent {",
+    "            MaterialTheme {",
+    "                when (requestedScreen) {",
+    branches,
+    `                    else -> ${fallbackScreen}()`,
+    "                }",
+    "            }",
+    "        }",
+    "    }",
+    "}",
+    "",
+  ].join("\n");
+}
