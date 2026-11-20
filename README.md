@@ -17,7 +17,7 @@ A browser-based Kotlin + Jetpack Compose workspace with a split editor and Andro
 
 The preview uses a local companion runner: it writes all open Kotlin source buffers into a starter Android project, compiles it with Gradle, installs it on a connected emulator/device, launches a generated preview Activity for the selected composable, and captures the device screen for the browser.
 
-This is a real Android screen, not an HTML approximation. The runner discovers `@Preview` functions and supports one `@PreviewParameter` provider for a single parameter. Tap or swipe on the preview to interact with the device. Gradle daemon reuse and build cache improve repeat builds, but each refresh still compiles and relaunches the app; it is not Android Studio's instant Layoutlib preview.
+This is a real Android screen, not an HTML approximation. The runner discovers `@Preview` functions and supports one `@PreviewParameter` provider for a single parameter. Tap or swipe on the preview to interact with the device. Gradle daemon reuse, build cache, unchanged-source detection, and APK install skipping reduce repeat work. Changed files use Gradle's incremental compilation where possible, but the preview Activity still relaunches; this is not Android Studio's instant in-process Layoutlib preview.
 
 ## Local development
 
