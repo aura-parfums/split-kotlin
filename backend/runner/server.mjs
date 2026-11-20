@@ -287,13 +287,25 @@ async function createPreview(body, res) {
       return send(res, 422, { ok: false, stage: "analysis", error: "No zero-argument @Composable functions were found. Add @Composable fun YourScreen() to preview a screen." });
     }
     const selectedScreen = typeof body.screen === "string" ? body.screen : uniqueScreens[0];
-    const selectedScreens = selectedScreen === "__all__" ? uniqueScreens : [selectedScreen];
-    const unsupported = selectedScreens.filter((name) => previewTargets.find((target) => target.name === name)?.unsupported);
-    if (unsupported.length) {
+    const requestedScreens = selectedScreen === "__all__" ? uniqueScreens : [selectedScreen];
+    const unsupported = requestedScreens.filter((name) => previewTargets.find((target) => target.name === name)?.unsupported);
+    if (selectedScreen !== "__all__" && unsupported.length) {
       return send(res, 422, {
         ok: false,
         stage: "analysis",
-        error: "Selected @Preview parameters are not supported. Use one @PreviewParameter provider for a single parameter.",
+        error: "Selected @Preview parameters are not supported. Use one @PreviewParameter provider for each required parameter.",
+        unsupportedScreens: unsupported,
+        availableScreens: uniqueScreens,
+      });
+    }
+    const selectedScreens = selectedScreen === "__all__"
+      ? requestedScreens.filter((name) => !unsupported.includes(name))
+      : requestedScreens;
+    if (!selectedScreens.length) {
+      return send(res, 422, {
+        ok: false,
+        stage: "analysis",
+        error: "No supported preview targets were found. Add a zero-argument composable or a single @PreviewParameter provider.",
         unsupportedScreens: unsupported,
         availableScreens: uniqueScreens,
       });
