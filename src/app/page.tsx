@@ -189,9 +189,9 @@ export default function Home() {
     } finally {
       previewInFlight.current = false;
       setRunning(false);
-      if (pendingAutoPreview.current && autoPreview) {
+      if (pendingAutoPreview.current) {
         pendingAutoPreview.current = false;
-        previewTimer.current = setTimeout(() => { void runPreview(); }, 450);
+        if (autoPreview) previewTimer.current = setTimeout(() => { void runPreview(); }, 450);
       }
     }
   }
