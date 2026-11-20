@@ -163,7 +163,8 @@ function runBinaryCommand(command, args, options = {}) {
     });
   });
 }
-\nasync function createPreview(body, res) {
+
+async function createPreview(body, res) {
   try {
     if (typeof body.code !== "string" || body.code.length > 200_000) {
       return send(res, 400, { ok: false, error: "Kotlin source is missing or too large (200 KB max)." });
@@ -222,7 +223,8 @@ function runBinaryCommand(command, args, options = {}) {
     return send(res, 422, { ok: false, stage: "build-or-device", error: error.message });
   }
 }
-\nconst server = createServer(async (req, res) => {
+
+const server = createServer(async (req, res) => {
   const origin = req.headers.origin;
   if (origin && origin !== ORIGIN) return send(res, 403, { error: "Origin not allowed." });
   if (origin) res.setHeader("Access-Control-Allow-Origin", ORIGIN);
