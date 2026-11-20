@@ -1,19 +1,64 @@
-# Local Android execution backend
+# Local Android preview runner
 
-The runner is intentionally a local companion service. It binds to `127.0.0.1` by default and only exposes a fixed Gradle build task for an existing project folder beneath `backend/projects`.
+Split Kotlin Studio is a browser IDE, but real Jetpack Compose rendering requires Android's runtime. The local runner compiles the current editor buffer, installs the debug app on a connected Android emulator/device, launches it, and captures the actual device screen for the browser preview.
 
-## Start
+This is a device-backed preview loop, not Android Studio's in-process Layoutlib preview. A refresh takes time because the app must compile and launch. After the first manual Preview, Auto refresh debounces edits and reruns the preview.
 
-1. Install a supported JDK (17), Android SDK platform/build tools, and Gradle.
-2. Set `ANDROID_HOME` or `ANDROID_SDK_ROOT`.
-3. Copy `runner/.env.example` to your local environment and generate a token with at least 32 characters.
-4. From `backend/runner`, export the variables and run `npm start`.
+## Requirements
 
-The service exposes an unauthenticated `GET /health` endpoint and a token-protected `POST /build` endpoint. The build endpoint accepts only a project ID and always runs `:app:assembleDebug`; it does not accept arbitrary shell commands or Gradle arguments.
+- JDK 17
+- Android SDK with Platform 35 and Build Tools installed
+- Gradle installed and available on PATH
+- Android Emulator running, or an Android phone connected with USB debugging enabled
+- ADB available through `ANDROID_HOME/platform-tools` or PATH
 
-## Important boundaries
+## Run locally
 
-- Keep the runner bound to loopback. Do not expose it directly to the public internet.
-- Keep the bearer token private; never put it in client-side Next.js code.
-- The initial runner builds a checked-in sample project. It does not yet synchronize Monaco edits into the Android project, install APKs, stream emulator frames, or provide live Compose preview.
-- A later authenticated local bridge will connect workspace files to the runner and stream build/device status.
+From the repository root, install web dependencies:
+
+```bash
+npm install
+```
+
+Generate one secret and use the same value for both processes:
+
+```bash
+export RUNNER_TOKEN="$(openssl rand -hex 32)"
+export RUNNER_PORT=4317
+export RUNNER_HOST=127.0.0.1
+export WORKSPACE_ORIGIN=http://localhost:3000
+export ANDROID_HOME="$HOME/Android/Sdk"
+export RUNNER_URL=http://127.0.0.1:4317
+```
+
+Terminal 1 — start the runner from its directory:
+
+```bash
+cd backend/runner
+npm start
+```
+
+Terminal 2 — from the repository root, start the web IDE with the same environment:
+
+```bash
+npm run dev
+```
+
+Open `http://localhost:3000`, start an emulator (or connect a USB-debugging-enabled Android phone), then press **Preview**. Once the first preview succeeds, Auto refresh will re-render after edits settle.
+
+## Preview pipeline
+
+1. Browser sends the current `MainActivity.kt` buffer to the Next.js server route.
+2. The server forwards it to the authenticated loopback runner.
+3. The runner writes only to the fixed starter source path.
+4. Gradle compiles the Compose app.
+5. ADB installs and launches it on the first available device.
+6. ADB captures a PNG screenshot; the browser displays that real Android frame.
+
+## Security and limitations
+
+- The runner binds to loopback and accepts a fixed project ID and source buffer, not arbitrary shell commands.
+- The runner token is server-side only. Do not expose it through a `NEXT_PUBLIC_*` variable.
+- Keep the runner private; do not expose port 4317 to the public internet.
+- This initial version previews one Activity in the checked-in `hello-compose` project. It does not yet provide Android Studio's multi-@Preview gallery, instant in-process recomposition, touch forwarding, project/file management, or language-server diagnostics.
+- The Next.js server and local runner must run on the same computer. A remotely hosted website cannot reach your computer's localhost through its server-side API route.
