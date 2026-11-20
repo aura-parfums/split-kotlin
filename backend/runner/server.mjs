@@ -178,7 +178,7 @@ function discoverPreviewTargets(source) {
   for (const match of source.matchAll(declaration)) {
     const annotations = match[1] || "";
     const name = match[2];
-    const parameters = match[3].trim().replace(/,\\s*$/, "");
+    const parameters = match[3].trim().replace(/,\s*$/, "");
     const parameterParts = parameters ? parameters.split(",").map((parameter) => parameter.trim()).filter(Boolean) : [];
     if (!parameters || parameterParts.every((parameter) => parameter.includes("="))) {
       targets.push({ name, render: name + "()" });
