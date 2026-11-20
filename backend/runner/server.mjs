@@ -223,7 +223,7 @@ function extractFunctionParameters(source, openIndex) {
 
 function discoverPreviewTargets(source) {
   const targets = [];
-  const declaration = /((?:@[A-Za-z_][A-Za-z0-9_.]*(?:\([^)]*\))?\s*)*)@Composable\s+(?:(?:private|internal)\s+)?fun\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(/g;
+  const declaration = /((?:@[A-Za-z_][A-Za-z0-9_.]*(?:\([^)]*\))?\s*)*)@Composable\s+(?:(?:internal)\s+)?fun\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(/g;
   for (const match of source.matchAll(declaration)) {
     const name = match[2];
     const openIndex = match.index + match[0].lastIndexOf("(");
