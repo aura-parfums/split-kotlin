@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, realpathSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, realpathSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join, resolve, sep } from "node:path";
 
 const HOST = process.env.RUNNER_HOST || "127.0.0.1";
@@ -63,6 +63,16 @@ function getProjectDir(projectId) {
   const root = realpathSync(PROJECTS_ROOT);
   if (!real.startsWith(root + sep)) throw new Error("Invalid project location.");
   return real;
+}
+
+function readProjectFiles(projectId) {
+  const projectDir = getProjectDir(projectId);
+  const kotlinDir = join(projectDir, "app/src/main/java/com/splitstudio/hello");
+  if (!existsSync(kotlinDir)) return [];
+  return readdirSync(kotlinDir, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && /^[A-Za-z_][A-Za-z0-9_]*\\.kt$/.test(entry.name) && entry.name !== "SplitStudioPreviewActivity.kt")
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((entry) => ({ path: entry.name, content: readFileSync(join(kotlinDir, entry.name), "utf8") }));
 }
 
 function runGradle(projectDir, res) {
@@ -496,6 +506,14 @@ const server = createServer(async (req, res) => {
   }
 
   if (!authorized(req)) return send(res, 401, { error: "Unauthorized." });
+
+  if (url.pathname === "/files" && req.method === "GET") {
+    try {
+      return send(res, 200, { ok: true, files: readProjectFiles(url.searchParams.get("projectId") || "") });
+    } catch (error) {
+      return send(res, 400, { ok: false, error: error.message });
+    }
+  }
 
   if (url.pathname === "/preview" && req.method === "POST") {
     try {
