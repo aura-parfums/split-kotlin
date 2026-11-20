@@ -1,21 +1,29 @@
 # Split Kotlin Studio
 
-A browser-based Android development workspace focused on Kotlin and Jetpack Compose.
+A browser-based Kotlin + Jetpack Compose workspace with a split editor and Android screen preview.
 
 ## Product direction
 
-- Monaco-powered Kotlin editor on the left.
-- Android device workspace and preview on the right.
-- Project explorer, build output, and device controls.
-- Real Jetpack Compose execution through a local Android SDK/Gradle runner (planned; never represented by an HTML mock preview).
+- Monaco Kotlin editor on the left.
+- Actual Android Runtime screen capture on the right.
+- Detect and select zero-argument `@Composable` functions from the open source file.
+- Debounced preview refresh after the first successful render.
+- Project explorer and build/diagnostic output.
 
-## Current status
+## Current implementation
 
-The repository is being built from zero. The first milestone is the IDE shell and editor experience. Android compilation and live device preview will be added as a separate execution layer.
+The preview uses a local companion runner: it writes the current editor buffer into a starter Android project, compiles it with Gradle, installs it on a connected emulator/device, launches a generated preview Activity for the selected composable, and captures the device screen for the browser.
 
-## Planned stack
+This is a real Android screen, not an HTML approximation. It is not yet Android Studio's instant Layoutlib preview: each refresh recompiles/relaunches the app. Parameterized composables, a full `@Preview` configuration gallery, touch forwarding, and a multi-file project workspace remain future work.
+
+## Local development
+
+See [backend/README.md](backend/README.md) for JDK, Android SDK, Gradle, ADB, runner-token, emulator, and startup requirements.
+
+## Stack
 
 - Next.js + TypeScript
 - Monaco Editor
-- Kotlin / Gradle
-- Android SDK and emulator integration
+- Kotlin + Jetpack Compose
+- Android SDK, Gradle, and ADB
+- Local authenticated Node.js preview runner
