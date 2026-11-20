@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type PointerEvent } from "react";
 import Editor from "@monaco-editor/react";
 import {
   Activity, AppWindow, ChevronDown, ChevronRight, Code2, Command,
@@ -139,7 +139,7 @@ export default function Home() {
       setBuildOutput(error instanceof Error ? error.message : "Device interaction failed.");
     }
   }
-  function handlePreviewPointerDown(event: React.PointerEvent<HTMLImageElement>) {
+  function handlePreviewPointerDown(event: PointerEvent<HTMLImageElement>) {
     const rect = event.currentTarget.getBoundingClientRect();
     interactionStart.current = {
       x: Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)),
