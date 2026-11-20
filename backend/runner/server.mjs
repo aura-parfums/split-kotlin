@@ -429,7 +429,7 @@ const server = createServer(async (req, res) => {
 
   if (url.pathname === "/preview" && req.method === "POST") {
     try {
-      const body = await readJson(req, 256 * 1024);
+      const body = await readJson(req, 1_200_000);
       return await createPreview(body, res);
     } catch (error) {
       return send(res, 400, { ok: false, error: error.message });
