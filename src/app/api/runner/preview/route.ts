@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     typeof (body as { code?: unknown }).code !== "string" ||
     ("screen" in body && typeof (body as { screen?: unknown }).screen !== "string") ||
     ("files" in body && (!Array.isArray((body as { files?: unknown }).files) ||
-      (body as { files: unknown[] }).files.length > 10))
+      (body as { files: unknown[] }).files.length > 9))
   ) {
     return NextResponse.json({ ok: false, error: "Invalid preview request." }, { status: 400 });
   }
