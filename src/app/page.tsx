@@ -176,7 +176,7 @@ export default function Home() {
     }
   }
   const previewScreens = (() => {
-    const found = [...Object.values(projectFiles).join("\n").matchAll(/@Composable\s+(?:(?:private|internal)\s+)?fun\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(/g)]
+    const found = [...Object.values(projectFiles).join("\n").matchAll(/@Composable\s+(?:(?:internal)\s+)?fun\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(/g)]
       .map((match) => match[1]);
     return [...new Set(found)];
   })();
