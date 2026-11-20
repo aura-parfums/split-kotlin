@@ -210,20 +210,20 @@ async function createPreview(body, res) {
         source = missingImports.join("\n") + "\n" + source;
       }
     }
-    source += `\n
-class SplitStudioPreviewActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            MaterialTheme {
-                Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                    ${selectedScreens.map((screen) => "Box(modifier = Modifier.fillMaxWidth().height(720.dp)) { " + screen + "() }").join("\n                    ")}
-                }
-            }
-        }
-    }
-}
-`;
+    source += "\nclass SplitStudioPreviewActivity : ComponentActivity() {\n" +
+      "    override fun onCreate(savedInstanceState: Bundle?) {\n" +
+      "        super.onCreate(savedInstanceState)\n" +
+      "        val requestedScreen = intent.getStringExtra(\\"splitstudio.screen\\")\n" +
+      "        setContent {\n" +
+      "            MaterialTheme {\n" +
+      "                when (requestedScreen) {\n" +
+      "                    " + uniqueScreens.map((screen) => "\\"" + screen + "\\" -> " + screen + "()").join("\\n                    ") + "\n" +
+      "                    else -> " + uniqueScreens[0] + "()\n" +
+      "                }\n" +
+      "            }\n" +
+      "        }\n" +
+      "    }\n" +
+      "}\n";
     writeFileSync(sourcePath, source, "utf8");
 
     const sdk = process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT || "";
@@ -259,21 +259,26 @@ class SplitStudioPreviewActivity : ComponentActivity() {
 
     const serial = devices[0];
     await runCommand(adb, ["-s", serial, "install", "-r", apk], { env, timeout: 120000 });
-    await runCommand(adb, ["-s", serial, "shell", "am", "force-stop", "com.splitstudio.hello"], { env, timeout: 15000 });
-    await runCommand(adb, ["-s", serial, "shell", "am", "start", "-n", "com.splitstudio.hello/.SplitStudioPreviewActivity"], { env, timeout: 15000 });
-    await new Promise((resolvePromise) => setTimeout(resolvePromise, 1800));
-    const screenshot = await runBinaryCommand(adb, ["-s", serial, "exec-out", "screencap", "-p"], { env, timeout: 20000 });
-    const image = screenshot.stdout.toString("base64");
+    const previews = [];
+    for (const screen of selectedScreens.slice(0, 8)) {
+      await runCommand(adb, ["-s", serial, "shell", "am", "force-stop", "com.splitstudio.hello"], { env, timeout: 15000 });
+      await runCommand(adb, ["-s", serial, "shell", "am", "start", "-n", "com.splitstudio.hello/.SplitStudioPreviewActivity", "--es", "splitstudio.screen", screen], { env, timeout: 15000 });
+      await new Promise((resolvePromise) => setTimeout(resolvePromise, 900));
+      const screenshot = await runBinaryCommand(adb, ["-s", serial, "exec-out", "screencap", "-p"], { env, timeout: 20000 });
+      previews.push({ screen, image: "data:image/png;base64," + screenshot.stdout.toString("base64") });
+    }
 
     return send(res, 200, {
       ok: true,
       device: serial,
-      image: `data:image/png;base64,${image}`,
+      image: previews[0]?.image ?? null,
+      previews,
       output: build.stdout.slice(-50000),
-      message: "Selected Compose screen rendered on the connected Android device.",
+      message: "Compose screens captured independently from the connected Android device.",
       availableScreens: uniqueScreens,
       selectedScreen,
-      renderedScreens: selectedScreens,
+      renderedScreens: previews.map((item) => item.screen),
+      truncated: selectedScreens.length > 8,
     });
   } catch (error) {
     return send(res, 422, { ok: false, stage: "build-or-device", error: error.message });
