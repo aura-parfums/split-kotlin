@@ -73,14 +73,15 @@ export default function Home() {
   const [running, setRunning] = useState(false);
   const [buildOutput, setBuildOutput] = useState("Live Compose preview is ready to connect. Start the local Android runner and an emulator, then press Preview.");
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const [autoPreview, setAutoPreview] = useState(true);\n  const previewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [autoPreview, setAutoPreview] = useState(true);
+  const previewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [buildStatus, setBuildStatus] = useState<"idle" | "building" | "success" | "error">("idle");
   async function runPreview() {
     setRunning(true);
     setBuildStatus("building");
     setActiveTab("terminal");
     setBottomOpen(true);
-    setBuildOutput("Compiling current MainActivity.kt…\\nInstalling on connected Android device…\\nCapturing Compose screen…");
+    setBuildOutput("Compiling current MainActivity.kt…\nInstalling on connected Android device…\nCapturing Compose screen…");
     try {
       const response = await fetch("/api/runner/preview", {
         method: "POST",
@@ -93,7 +94,7 @@ export default function Home() {
       }
       setPreviewImage(result.image);
       setBuildStatus("success");
-      setBuildOutput((result.output || "Gradle build completed.") + "\\n\\nLIVE PREVIEW UPDATED\\nDevice: " + result.device);
+      setBuildOutput((result.output || "Gradle build completed.") + "\n\nLIVE PREVIEW UPDATED\nDevice: " + result.device);
     } catch (error) {
       setBuildStatus("error");
       setBuildOutput(error instanceof Error ? error.message : "Unknown preview error.");
