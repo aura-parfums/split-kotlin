@@ -30,6 +30,7 @@
 ## Milestone 4 — Full project workspace
 - [ ] Read project tree from backend instead of hard-coded UI data
 - [x] Open and edit up to 10 Kotlin source files in one preview workspace
+- [x] Persist browser-local drafts and restore runner workspace files
 - [ ] Open and save XML/Gradle files
 - [ ] Create, rename, and delete files with path validation
 - [ ] Persist project files and user projects
