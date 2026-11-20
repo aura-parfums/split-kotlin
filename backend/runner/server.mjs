@@ -237,7 +237,7 @@ function discoverPreviewTargets(source) {
     }
     const provider = parameters.match(/@PreviewParameter\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)::class(?:\s*,[^)]*)?\s*\)\s*(?:val\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*:/);
     const requiredParameters = parameterParts.filter((parameter) => {
-      const declaration = parameter.replace(/@[A-Za-z_][A-Za-z0-9_]*(?:\\([^)]*\\))?\\s*/g, "");
+      const declaration = parameter.replace(/@[A-Za-z_][A-Za-z0-9_]*(?:\([^)]*\))?\s*/g, "");
       return !declaration.includes("=");
     });
     if (provider && requiredParameters.length === 1) {
