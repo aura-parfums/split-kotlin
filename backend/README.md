@@ -2,7 +2,7 @@
 
 Split Kotlin Studio is a browser IDE, but real Jetpack Compose rendering requires Android's runtime. The local runner compiles the current editor buffer, installs the debug app on a connected Android emulator/device, launches it, and captures the actual device screen for the browser preview.
 
-This is a device-backed preview loop, not Android Studio's in-process Layoutlib preview. The editor detects zero-argument `@Composable` functions and provides a screen selector. Choose one function for an individual preview, or choose **All screens** to capture each detected function separately and display the results as independent gallery cards (up to 8 screens per run). A refresh takes time because the app must compile and launch. After the first manual Preview, Auto refresh debounces edits and reruns the selected screen.
+This is a device-backed preview loop, not Android Studio's in-process Layoutlib preview. The editor detects public/internal zero-argument `@Composable` functions and supported `@PreviewParameter` functions. Workspace files are restored from the local runner when no browser-local draft exists; edits are kept in browser storage and synchronized to the runner on Preview. The preview-discovery parser has Node test coverage in CI. Choose one function for an individual preview, or choose **All screens** to capture each detected function separately and display the results as independent gallery cards (up to 8 screens per run). A refresh takes time because the app must compile and launch. After the first manual Preview, Auto refresh debounces edits and reruns the selected screen.
 
 ## Requirements
 
