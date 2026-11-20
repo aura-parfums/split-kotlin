@@ -71,6 +71,33 @@ export default function Home() {
   const [bottomOpen, setBottomOpen] = useState(true);
   const [previewScale, setPreviewScale] = useState("100%");
   const [running, setRunning] = useState(false);
+  const [buildOutput, setBuildOutput] = useState("Runner is not connected yet. Configure the local runner to build the checked-in Hello Compose sample.");
+  const [buildStatus, setBuildStatus] = useState<"idle" | "building" | "success" | "error">("idle");
+  async function runBuild() {
+    setRunning(true);
+    setBuildStatus("building");
+    setActiveTab("terminal");
+    setBottomOpen(true);
+    setBuildOutput("$ ./gradle :app:assembleDebug\\nStarting local Android build…");
+    try {
+      const response = await fetch("/api/runner/build", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: "hello-compose" }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.ok) {
+        throw new Error(result.error || result.output || "Build failed.");
+      }
+      setBuildStatus("success");
+      setBuildOutput((result.output || "Build completed.") + "\\n\\nBUILD SUCCESSFUL\\nAPK: " + result.artifact);
+    } catch (error) {
+      setBuildStatus("error");
+      setBuildOutput(error instanceof Error ? error.message : "Unknown build error.");
+    } finally {
+      setRunning(false);
+    }
+  }
   const lineCount = useMemo(() => code.split("\n").length, [code]);
 
   return (
@@ -171,7 +198,7 @@ export default function Home() {
                 <button className="panel-icon" onClick={() => setBottomOpen(false)} aria-label="Close panel"><X size={14} /></button>
               </div>
               <div className="terminal-content">
-                {activeTab === "terminal" ? <><span className="terminal-prompt">➜</span><span className="terminal-path"> ~/my-compose-app</span><span className="terminal-cursor"> ▍</span><span className="terminal-hint">Terminal is waiting for the local Android runner.</span></> : <span className="empty-problems">No problems detected in the editor buffer.</span>}
+                {activeTab === "terminal" ? <pre className="build-output">{buildOutput}</pre> : <span className="empty-problems">No Kotlin compiler diagnostics yet. Build the starter project to see Gradle output.</span>}
               </div>
             </div>
           )}
@@ -185,7 +212,7 @@ export default function Home() {
               <button className="device-select"><Smartphone size={13} /> Pixel 8 Pro <ChevronDown size={12} /></button>
               <button className="icon-button small" onClick={() => setPreviewScale(previewScale === "100%" ? "85%" : "100%")} aria-label="Change preview scale"><Monitor size={15} /></button>
               <button className="icon-button small" onClick={() => setRunning(false)} aria-label="Refresh preview"><RefreshCw size={14} /></button>
-              <button className="run-button" onClick={() => setRunning(true)}><Play size={13} fill="currentColor" /> Run</button>
+              <button className="run-button" onClick={runBuild} disabled={running}><Play size={13} fill="currentColor" /> {running ? "Building…" : "Build APK"}</button>
             </div>
           </div>
           <div className="device-stage">
@@ -199,7 +226,7 @@ export default function Home() {
                     <h2>Hello, Android!</h2>
                     <p>Your Compose UI will appear here<br />when the Android runtime is connected.</p>
                     <button className="android-demo-button">Get started</button>
-                    <div className="runtime-note"><span className="runtime-dot" /> {running ? "Build runner not connected" : "Waiting for runtime"}</div>
+                    <div className="runtime-note"><span className="runtime-dot" /> {buildStatus === "building" ? "Building starter project" : buildStatus === "success" ? "APK build successful" : buildStatus === "error" ? "Build failed — see terminal" : "Waiting for local build"}</div>
                   </div>
                   <div className="gesture-bar"><span /></div>
                 </div>
@@ -207,7 +234,7 @@ export default function Home() {
             </div>
             <div className="preview-footnote"><span className="info-dot">i</span> Device frame is a workspace placeholder. Real Compose rendering requires the local Android runtime.</div>
           </div>
-          <div className="device-footer"><span><span className="footer-dot" /> Emulator disconnected</span><span>1280 × 2856</span></div>
+          <div className="device-footer"><span><span className="footer-dot" /> {buildStatus === "success" ? "APK created · emulator not attached" : "Emulator disconnected"}</span><span>1280 × 2856</span></div>
         </section>
       </div>
 
