@@ -136,7 +136,7 @@ export default function Home() {
     }
   }
   const previewScreens = (() => {
-    const found = [...Object.values(projectFiles).join("\\n").matchAll(/@Composable\s+(?:(?:private|internal)\s+)?fun\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(/g)]
+    const found = [...Object.values(projectFiles).join("\n").matchAll(/@Composable\s+(?:(?:private|internal)\s+)?fun\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(/g)]
       .map((match) => match[1]);
     return [...new Set(found)];
   })();
@@ -145,7 +145,7 @@ export default function Home() {
   function addKotlinFile() {
     const requested = window.prompt("New Kotlin file name (without .kt):", "NewScreen");
     if (!requested) return;
-    const safeName = requested.trim().replace(/\\.kt$/i, "");
+    const safeName = requested.trim().replace(/\.kt$/i, "");
     if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(safeName)) {
       setBuildOutput("Invalid Kotlin filename. Use letters, numbers, and underscores.");
       return;
@@ -157,7 +157,7 @@ export default function Home() {
     }
     setProjectFiles((current) => ({
       ...current,
-      [fileName]: "package com.splitstudio.hello\\n\\nimport androidx.compose.material3.Text\\nimport androidx.compose.runtime.Composable\\n\\n@Composable\\nfun " + safeName + "() {\\n    Text(\\"New Compose screen\\")\\n}\\n"
+      [fileName]: "package com.splitstudio.hello\n\nimport androidx.compose.material3.Text\nimport androidx.compose.runtime.Composable\n\n@Composable\nfun " + safeName + "() {\n    Text(\\"New Compose screen\\")\n}\n"
     }));
     setActiveFile(fileName);
   }
