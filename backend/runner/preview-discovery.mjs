@@ -57,15 +57,15 @@ export function discoverPreviewTargets(source) {
     if (extracted === null) continue;
     const parameters = extracted.trim().replace(/,\s*$/, "");
     const parameterParts = parameters ? parameters.split(",").map((parameter) => parameter.trim()).filter(Boolean) : [];
-    if (!parameters || parameterParts.every((parameter) => parameter.includes("="))) {
-      targets.push({ name, render: name + "()" });
-      continue;
-    }
     const provider = parameters.match(/@PreviewParameter\s*\(\s*(?:provider\s*=\s*)?([A-Za-z_][A-Za-z0-9_]*)::class(?:\s*,[^)]*)?\s*\)\s*(?:val\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*:/);
     const requiredParameters = parameterParts.filter((parameter) => {
       const declaration = parameter.replace(/@[A-Za-z_][A-Za-z0-9_]*(?:\([^)]*\))?\s*/g, "");
       return !declaration.includes("=");
     });
+    if (!parameters || requiredParameters.length === 0) {
+      targets.push({ name, render: name + "()" });
+      continue;
+    }
     if (provider && requiredParameters.length === 1) {
       targets.push({
         name,
