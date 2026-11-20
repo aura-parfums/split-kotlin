@@ -47,6 +47,39 @@ function extractFunctionParameters(source, openIndex) {
   return null;
 }
 
+function splitTopLevelParameters(parameters) {
+  const parts = [];
+  let start = 0;
+  let depth = 0;
+  let genericDepth = 0;
+  let quote = null;
+  let escaped = false;
+  for (let index = 0; index < parameters.length; index++) {
+    const char = parameters[index];
+    if (quote) {
+      if (escaped) escaped = false;
+      else if (char === "\\") escaped = true;
+      else if (char === quote) quote = null;
+      continue;
+    }
+    if (char === '"' || char === "'") {
+      quote = char;
+      continue;
+    }
+    if (char === "(") depth++;
+    else if (char === ")") depth--;
+    else if (char === "<") genericDepth++;
+    else if (char === ">" && parameters[index - 1] !== "-" && genericDepth > 0) genericDepth--;
+    else if (char === "," && depth === 0 && genericDepth === 0) {
+      parts.push(parameters.slice(start, index).trim());
+      start = index + 1;
+    }
+  }
+  const last = parameters.slice(start).trim();
+  if (last) parts.push(last);
+  return parts;
+}
+
 export function discoverPreviewTargets(source) {
   const targets = [];
   const declaration = /((?:@[A-Za-z_][A-Za-z0-9_.]*(?:\([^)]*\))?\s*)*)@Composable\s+(?:(?:internal)\s+)?fun\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(/g;
@@ -56,7 +89,7 @@ export function discoverPreviewTargets(source) {
     const extracted = extractFunctionParameters(source, openIndex);
     if (extracted === null) continue;
     const parameters = extracted.trim().replace(/,\s*$/, "");
-    const parameterParts = parameters ? parameters.split(",").map((parameter) => parameter.trim()).filter(Boolean) : [];
+    const parameterParts = parameters ? splitTopLevelParameters(parameters) : [];
     const provider = parameters.match(/@PreviewParameter\s*\(\s*(?:provider\s*=\s*)?([A-Za-z_][A-Za-z0-9_]*)::class(?:\s*,[^)]*)?\s*\)\s*(?:val\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*:/);
     const requiredParameters = parameterParts.filter((parameter) => {
       const declaration = parameter.replace(/@[A-Za-z_][A-Za-z0-9_]*(?:\([^)]*\))?\s*/g, "");
