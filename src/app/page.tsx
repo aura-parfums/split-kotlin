@@ -399,7 +399,7 @@ fun ${safeName}() {
             {selectedScreen === "__all__" && previewImages.length > 0 ? (
               <div className="preview-gallery">
                 {previewImages.map((item) => (
-                  <button className="preview-card" key={item.screen} onClick={() => { setSelectedScreen(item.screen); setPreviewImage(item.image); }}>
+                  <button className="preview-card" key={item.screen} onClick={() => { setSelectedScreen(item.screen); void runPreview(item.screen); }}>
                     <div className="preview-card-image"><img src={item.image} alt={item.screen + " Compose preview"} /></div>
                     <span className="preview-card-title">{item.screen}</span>
                     <span className="preview-card-subtitle">Android runtime capture</span>
