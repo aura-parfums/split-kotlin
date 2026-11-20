@@ -74,6 +74,7 @@ export default function Home() {
   const [buildOutput, setBuildOutput] = useState("Live Compose preview is ready to connect. Start the local Android runner and an emulator, then press Preview.");
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [autoPreview, setAutoPreview] = useState(true);
+  const [selectedScreen, setSelectedScreen] = useState("GreetingScreen");
   const previewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [buildStatus, setBuildStatus] = useState<"idle" | "building" | "success" | "error">("idle");
   async function runPreview() {
@@ -86,7 +87,7 @@ export default function Home() {
       const response = await fetch("/api/runner/preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId: "hello-compose", code }),
+        body: JSON.stringify({ projectId: "hello-compose", code, screen: previewScreens.includes(selectedScreen) ? selectedScreen : previewScreens[0] }),
       });
       const result = await response.json();
       if (!response.ok || !result.ok) {
@@ -112,6 +113,11 @@ export default function Home() {
       }, 1400);
     }
   }
+  const previewScreens = useMemo(() => {
+    const found = [...code.matchAll(/@Composable\\s+(?:(?:private|internal)\\s+)?fun\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*\\(\\s*\\)/g)]
+      .map((match) => match[1]);
+    return [...new Set(found)];
+  }, [code]);
   const lineCount = useMemo(() => code.split("\n").length, [code]);
 
   return (
@@ -223,7 +229,7 @@ export default function Home() {
           <div className="preview-header">
             <div className="preview-title"><Smartphone size={16} /><strong>PREVIEW</strong><span className="live-pill"><span /> DEVICE</span></div>
             <div className="preview-actions">
-              <label className="auto-preview-toggle"><input type="checkbox" checked={autoPreview} onChange={(event) => setAutoPreview(event.target.checked)} /> Auto</label><button className="device-select"><Smartphone size={13} /> Connected device <ChevronDown size={12} /></button>
+              <select className="preview-screen-select" aria-label="Select Compose screen" value={previewScreens.includes(selectedScreen) ? selectedScreen : previewScreens[0] ?? ""} onChange={(event) => setSelectedScreen(event.target.value)}>{previewScreens.map((screen) => <option key={screen} value={screen}>{screen}</option>)}</select><label className="auto-preview-toggle"><input type="checkbox" checked={autoPreview} onChange={(event) => setAutoPreview(event.target.checked)} /> Auto</label><button className="device-select"><Smartphone size={13} /> Connected device <ChevronDown size={12} /></button>
               <button className="icon-button small" onClick={() => setPreviewScale(previewScale === "100%" ? "85%" : "100%")} aria-label="Change preview scale"><Monitor size={15} /></button>
               <button className="icon-button small" onClick={() => setRunning(false)} aria-label="Refresh preview"><RefreshCw size={14} /></button>
               <button className="run-button" onClick={runPreview} disabled={running}><Play size={13} fill="currentColor" /> {running ? "Rendering…" : "Preview"}</button>
