@@ -89,7 +89,7 @@ export default function Home() {
     try {
       localStorage.setItem(workspaceStorageKey, JSON.stringify(projectFiles));
     } catch {
-      setBuildOutput("Could not persist the workspace in browser storage. Export your Kotlin files before leaving.");
+      console.warn("Split Kotlin Studio could not persist the workspace in browser storage.");
     }
   }, [projectFiles, workspaceReady]);
   useEffect(() => {
