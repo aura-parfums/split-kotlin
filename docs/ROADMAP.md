@@ -14,10 +14,13 @@
 - [x] Synchronize current MainActivity.kt editor buffer to starter project
 - [x] Compile and install to first connected Android device
 - [x] Capture actual device screen and display it in the browser
+- [x] Discover zero-argument `@Composable` functions in the editor buffer
+- [x] Select a screen and render it through a generated preview Activity
 - [x] Debounced Auto refresh after the first successful manual preview
 
 ## Milestone 3 — Android Studio-style preview experience
-- [ ] Support multiple `@Preview` composables and a preview gallery
+- [ ] Support parameterized composables and full `@Preview` annotation configurations
+- [ ] Show several selected screens side-by-side in a preview gallery
 - [ ] Preview parameter sets, themes, font scales, and device configurations
 - [ ] Faster incremental rendering and error overlays
 - [ ] Forward taps and gestures from browser preview to emulator
