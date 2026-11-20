@@ -314,6 +314,7 @@ async function createPreview(body, res) {
       return send(res, 400, { ok: false, stage: "analysis", error: "Selected preview screen was not found in the current Kotlin source.", availableScreens: uniqueScreens });
     }
 
+    const supportedTargets = previewTargets.filter((target) => !target.unsupported);
     const sourcePath = join(projectDir, "app/src/main/java/com/splitstudio/hello/MainActivity.kt");
     let source = body.code;
     if (!/^package\s+/m.test(source)) source = "package com.splitstudio.hello\n" + source;
@@ -342,8 +343,8 @@ async function createPreview(body, res) {
       "        setContent {\n" +
       "            MaterialTheme {\n" +
       "                when (requestedScreen) {\n" +
-      "                    " + previewTargets.map((target) => '"' + target.name + '" -> ' + (target.render || target.name + "()")).join("\n                    ") + "\n" +
-      "                    else -> " + uniqueScreens[0] + "()\n" +
+      "                    " + supportedTargets.map((target) => '"' + target.name + '" -> ' + (target.render || target.name + "()")).join("\n                    ") + "\n" +
+      "                    else -> " + selectedScreens[0] + "()\n" +
       "                }\n" +
       "            }\n" +
       "        }\n" +
