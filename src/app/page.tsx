@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Editor from "@monaco-editor/react";
 import {
   Activity, AppWindow, ChevronDown, ChevronRight, Code2, Command,
-  FileCode2, Folder, GitBranch, HardDrive, Menu, Monitor, MoreHorizontal,
-  Play, Plus, RefreshCw, Search, Settings2, Smartphone, Terminal,
+  FileCode2, Folder, GitBranch, Monitor, MoreHorizontal,
+  Play, RefreshCw, Search, Settings2, Smartphone,
   Wifi, X, Zap
 } from "lucide-react";
 
@@ -125,12 +125,12 @@ export default function Home() {
       }, 1400);
     }
   }
-  const previewScreens = useMemo(() => {
+  const previewScreens = (() => {
     const found = [...code.matchAll(/@Composable\s+(?:(?:private|internal)\s+)?fun\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*\)/g)]
       .map((match) => match[1]);
     return [...new Set(found)];
-  }, [code]);
-  const lineCount = useMemo(() => code.split("\n").length, [code]);
+  })();
+  const lineCount = code.split("\n").length;
 
   return (
     <main className="studio">
