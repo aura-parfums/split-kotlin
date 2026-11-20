@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, realpathSync } from "node:fs";
-import { resolve, sep } from "node:path";
+import { existsSync, mkdirSync, realpathSync, writeFileSync } from "node:fs";
+import { join, resolve, sep } from "node:path";
 
 const HOST = process.env.RUNNER_HOST || "127.0.0.1";
 const PORT = Number(process.env.RUNNER_PORT || 4317);
@@ -110,7 +110,93 @@ function runGradle(projectDir, res) {
   });
 }
 
-const server = createServer(async (req, res) => {
+
+function runCommand(command, args, options = {}) {
+  return new Promise((resolvePromise, reject) => {
+    const child = spawn(command, args, {
+      cwd: options.cwd,
+      env: options.env || process.env,
+      shell: false,
+      windowsHide: true,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.on("data", (chunk) => { stdout += chunk.toString(); });
+    child.stderr.on("data", (chunk) => { stderr += chunk.toString(); });
+    const timeout = setTimeout(() => child.kill("SIGTERM"), options.timeout || 5 * 60 * 1000);
+    child.on("error", (error) => {
+      clearTimeout(timeout);
+      reject(error);
+    });
+    child.on("close", (code) => {
+      clearTimeout(timeout);
+      if (code === 0) resolvePromise({ stdout, stderr });
+      else reject(new Error((stderr || stdout || `${command} exited with ${code}`).slice(-16000)));
+    });
+  });
+}
+
+async function createPreview(body, res) {
+  try {
+    if (typeof body.code !== "string" || body.code.length > 200_000) {
+      return send(res, 400, { ok: false, error: "Kotlin source is missing or too large (200 KB max)." });
+    }
+    const projectDir = getProjectDir(body.projectId);
+    const sourcePath = join(projectDir, "app/src/main/java/com/splitstudio/hello/MainActivity.kt");
+    writeFileSync(sourcePath, body.code, "utf8");
+
+    const sdk = process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT || "";
+    const env = {
+      ...process.env,
+      ANDROID_HOME: sdk,
+      ANDROID_SDK_ROOT: sdk,
+    };
+    const gradle = process.platform === "win32" ? "gradle.bat" : "gradle";
+    const build = await runCommand(gradle, [":app:assembleDebug", "--no-daemon"], {
+      cwd: projectDir, env, timeout: 5 * 60 * 1000,
+    });
+
+    const apk = join(projectDir, "app/build/outputs/apk/debug/app-debug.apk");
+    if (!existsSync(apk)) throw new Error("Gradle finished but the debug APK was not found.");
+
+    const adb = sdk ? join(sdk, "platform-tools", process.platform === "win32" ? "adb.exe" : "adb") : "adb";
+    const devicesResult = await runCommand(adb, ["devices"], { env, timeout: 15000 });
+    const devices = devicesResult.stdout.split("\\n")
+      .slice(1)
+      .map((line) => line.trim().split(/\\s+/))
+      .filter((parts) => parts.length >= 2 && parts[1] === "device")
+      .map((parts) => parts[0]);
+
+    if (!devices.length) {
+      return send(res, 409, {
+        ok: false,
+        stage: "device",
+        error: "Build succeeded, but no Android emulator or USB device is connected. Start an emulator or connect a device with USB debugging enabled.",
+        buildOutput: build.stdout + build.stderr,
+      });
+    }
+
+    const serial = devices[0];
+    await runCommand(adb, ["-s", serial, "install", "-r", apk], { env, timeout: 120000 });
+    await runCommand(adb, ["-s", serial, "shell", "am", "force-stop", "com.splitstudio.hello"], { env, timeout: 15000 });
+    await runCommand(adb, ["-s", serial, "shell", "monkey", "-p", "com.splitstudio.hello", "1"], { env, timeout: 15000 });
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, 1800));
+    const screenshot = await runCommand(adb, ["-s", serial, "exec-out", "screencap", "-p"], { env, timeout: 20000 });
+    const image = Buffer.from(screenshot.stdout, "binary").toString("base64");
+
+    return send(res, 200, {
+      ok: true,
+      device: serial,
+      image: `data:image/png;base64,${image}`,
+      output: build.stdout.slice(-50000),
+      message: "Compose app rendered on the connected Android device.",
+    });
+  } catch (error) {
+    return send(res, 422, { ok: false, stage: "build-or-device", error: error.message });
+  }
+}
+\nconst server = createServer(async (req, res) => {
   const origin = req.headers.origin;
   if (origin && origin !== ORIGIN) return send(res, 403, { error: "Origin not allowed." });
   if (origin) res.setHeader("Access-Control-Allow-Origin", ORIGIN);
@@ -133,7 +219,7 @@ const server = createServer(async (req, res) => {
 
   if (!authorized(req)) return send(res, 401, { error: "Unauthorized." });
 
-  if (url.pathname === "/build" && req.method === "POST") {
+  if (url.pathname === "/preview" && req.method === "POST") {\n    try {\n      const body = await readJson(req, 256 * 1024);\n      return await createPreview(body, res);\n    } catch (error) {\n      return send(res, 400, { ok: false, error: error.message });\n    }\n  }\n\n  if (url.pathname === "/build" && req.method === "POST") {
     try {
       const body = await readJson(req);
       const projectDir = getProjectDir(body.projectId);
