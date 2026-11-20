@@ -50,6 +50,18 @@ fun GreetingScreen() {
             Text("Get started")
         }
     }
+}
+
+@Composable
+fun ProfileScreen() {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(text = "Your profile")
+        Text(text = "This is a second screen preview.")
+    }
 }`;
 
 const files = [
