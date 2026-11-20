@@ -27,7 +27,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .build-output{margin:0;max-height:100%;overflow:auto;white-space:pre-wrap;word-break:break-word;color:#bfc0c6;font:10px/1.6 'DM Mono',monospace}
 .run-button:disabled{opacity:.55;cursor:wait}
 
-.real-device-capture{display:block;width:100%;height:100%;object-fit:contain;background:#000}
+.real-device-capture{display:block;width:100%;height:100%;object-fit:contain;background:#000;touch-action:none;cursor:crosshair;user-select:none}
 .build-output{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;overflow:auto}
 
 .auto-preview-toggle{display:inline-flex;align-items:center;gap:5px;color:#a7a7ae;font-size:10px;letter-spacing:.04em;cursor:pointer;user-select:none}
