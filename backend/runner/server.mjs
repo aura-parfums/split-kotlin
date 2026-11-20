@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, realpathSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join, resolve, sep } from "node:path";
-import { discoverPreviewTargets } from "./preview-discovery.mjs";
+import { buildPreviewActivity, discoverPreviewTargets } from "./preview-discovery.mjs";
 
 const HOST = process.env.RUNNER_HOST || "127.0.0.1";
 const PORT = Number(process.env.RUNNER_PORT || 4317);
@@ -258,31 +258,7 @@ async function createPreview(body, res) {
 
     const kotlinDir = join(projectDir, "app/src/main/java/com/splitstudio/hello");
     writeFileIfChanged(sourcePath, source);
-    const previewActivitySource =
-      "package com.splitstudio.hello\n\n" +
-      "import android.os.Bundle\n" +
-      "import androidx.activity.ComponentActivity\n" +
-      "import androidx.activity.compose.setContent\n" +
-      "import androidx.compose.material3.MaterialTheme\n" +
-      "import androidx.compose.foundation.layout.Column\n" +
-      "import androidx.compose.foundation.layout.fillMaxSize\n" +
-      "import androidx.compose.foundation.rememberScrollState\n" +
-      "import androidx.compose.foundation.verticalScroll\n" +
-      "import androidx.compose.ui.Modifier\n\n" +
-      "class SplitStudioPreviewActivity : ComponentActivity() {\n" +
-      "    override fun onCreate(savedInstanceState: Bundle?) {\n" +
-      "        super.onCreate(savedInstanceState)\n" +
-      "        val requestedScreen = intent.getStringExtra(\"splitstudio.screen\")\n" +
-      "        setContent {\n" +
-      "            MaterialTheme {\n" +
-      "                when (requestedScreen) {\n" +
-      "                    " + supportedTargets.map((target) => '"' + target.name + '" -> ' + (target.render || target.name + "()")).join("\n                    ") + "\n" +
-      "                    else -> " + selectedScreens[0] + "()\n" +
-      "                }\n" +
-      "            }\n" +
-      "        }\n" +
-      "    }\n" +
-      "}\n";
+    const previewActivitySource = buildPreviewActivity(supportedTargets, selectedScreens[0]);
     writeFileIfChanged(join(kotlinDir, "SplitStudioPreviewActivity.kt"), previewActivitySource);
     for (const [fileName, fileContent] of fileMap) {
       if (fileName === "MainActivity.kt") continue;
