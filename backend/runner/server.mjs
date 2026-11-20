@@ -72,7 +72,13 @@ function readProjectFiles(projectId) {
   return readdirSync(kotlinDir, { withFileTypes: true })
     .filter((entry) => entry.isFile() && /^[A-Za-z_][A-Za-z0-9_]*\.kt$/.test(entry.name) && entry.name !== "SplitStudioPreviewActivity.kt")
     .sort((a, b) => a.name.localeCompare(b.name))
-    .map((entry) => ({ path: entry.name, content: readFileSync(join(kotlinDir, entry.name), "utf8") }));
+    .map((entry) => {
+      let content = readFileSync(join(kotlinDir, entry.name), "utf8");
+      if (entry.name === "MainActivity.kt") {
+        content = content.replace(/\\nclass SplitStudioPreviewActivity : ComponentActivity\\(\\) \\{[\\s\\S]*?\\n\\}\\s*$/, "\\n");
+      }
+      return { path: entry.name, content };
+    });
 }
 
 function runGradle(projectDir, res) {
