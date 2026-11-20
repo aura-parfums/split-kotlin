@@ -213,11 +213,11 @@ async function createPreview(body, res) {
     source += "\nclass SplitStudioPreviewActivity : ComponentActivity() {\n" +
       "    override fun onCreate(savedInstanceState: Bundle?) {\n" +
       "        super.onCreate(savedInstanceState)\n" +
-      "        val requestedScreen = intent.getStringExtra(\\"splitstudio.screen\\")\n" +
+      "        val requestedScreen = intent.getStringExtra(\"splitstudio.screen\")\n" +
       "        setContent {\n" +
       "            MaterialTheme {\n" +
       "                when (requestedScreen) {\n" +
-      "                    " + uniqueScreens.map((screen) => "\\"" + screen + "\\" -> " + screen + "()").join("\\n                    ") + "\n" +
+      "                    " + uniqueScreens.map((screen) => "\\"" + screen + "\\" -> " + screen + "()").join("\n                    ") + "\n" +
       "                    else -> " + uniqueScreens[0] + "()\n" +
       "                }\n" +
       "            }\n" +
