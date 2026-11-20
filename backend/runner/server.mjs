@@ -246,34 +246,27 @@ async function createPreview(body, res) {
     }
 
     const sourcePath = join(projectDir, "app/src/main/java/com/splitstudio/hello/MainActivity.kt");
-    const requiredImports = [
-      "import android.os.Bundle",
-      "import androidx.activity.ComponentActivity",
-      "import androidx.activity.compose.setContent",
-      "import androidx.compose.material3.MaterialTheme",
-      "import androidx.compose.foundation.layout.Column",
-      "import androidx.compose.foundation.layout.fillMaxSize",
-      "import androidx.compose.ui.Modifier",
-      "import androidx.compose.foundation.layout.Box",
-      "import androidx.compose.foundation.layout.fillMaxWidth",
-      "import androidx.compose.foundation.layout.height",
-      "import androidx.compose.foundation.rememberScrollState",
-      "import androidx.compose.foundation.verticalScroll",
-      "import androidx.compose.ui.unit.dp",
-    ];
     let source = body.code;
     if (!/^package\s+/m.test(source)) source = "package com.splitstudio.hello\n" + source;
-    const missingImports = requiredImports.filter((line) => !source.split("\n").includes(line));
-    const packageLine = source.match(/^package [^\r\n]+/m);
-    if (missingImports.length) {
-      if (packageLine) {
-        const insertAt = source.indexOf("\n", packageLine.index) + 1;
-        source = source.slice(0, insertAt) + missingImports.join("\n") + "\n" + source.slice(insertAt);
-      } else {
-        source = missingImports.join("\n") + "\n" + source;
-      }
+    const packageMatch = source.match(/^package\s+([^\r\n]+)/m);
+    if (packageMatch && packageMatch[1].trim() !== "com.splitstudio.hello") {
+      return send(res, 422, { ok: false, stage: "analysis", error: "Kotlin preview files must use package com.splitstudio.hello." });
     }
-    source += "\nclass SplitStudioPreviewActivity : ComponentActivity() {\n" +
+
+    const kotlinDir = join(projectDir, "app/src/main/java/com/splitstudio/hello");
+    writeFileIfChanged(sourcePath, source);
+    const previewActivitySource =
+      "package com.splitstudio.hello\n\n" +
+      "import android.os.Bundle\n" +
+      "import androidx.activity.ComponentActivity\n" +
+      "import androidx.activity.compose.setContent\n" +
+      "import androidx.compose.material3.MaterialTheme\n" +
+      "import androidx.compose.foundation.layout.Column\n" +
+      "import androidx.compose.foundation.layout.fillMaxSize\n" +
+      "import androidx.compose.foundation.rememberScrollState\n" +
+      "import androidx.compose.foundation.verticalScroll\n" +
+      "import androidx.compose.ui.Modifier\n\n" +
+      "class SplitStudioPreviewActivity : ComponentActivity() {\n" +
       "    override fun onCreate(savedInstanceState: Bundle?) {\n" +
       "        super.onCreate(savedInstanceState)\n" +
       "        val requestedScreen = intent.getStringExtra(\"splitstudio.screen\")\n" +
@@ -287,13 +280,12 @@ async function createPreview(body, res) {
       "        }\n" +
       "    }\n" +
       "}\n";
-    writeFileIfChanged(sourcePath, source);
-    const kotlinDir = join(projectDir, "app/src/main/java/com/splitstudio/hello");
+    writeFileIfChanged(join(kotlinDir, "SplitStudioPreviewActivity.kt"), previewActivitySource);
     for (const [fileName, fileContent] of fileMap) {
       if (fileName === "MainActivity.kt") continue;
-      const normalized = /^package\\s+/m.test(fileContent)
+      const normalized = /^package\s+/m.test(fileContent)
         ? fileContent
-        : "package com.splitstudio.hello\\n" + fileContent;
+        : "package com.splitstudio.hello\n" + fileContent;
       writeFileIfChanged(join(kotlinDir, fileName), normalized);
     }
 
