@@ -188,9 +188,9 @@ function runBinaryCommand(command, args, options = {}) {
 
     const adb = sdk ? join(sdk, "platform-tools", process.platform === "win32" ? "adb.exe" : "adb") : "adb";
     const devicesResult = await runCommand(adb, ["devices"], { env, timeout: 15000 });
-    const devices = devicesResult.stdout.split("\\n")
+    const devices = devicesResult.stdout.split("\n")
       .slice(1)
-      .map((line) => line.trim().split(/\\s+/))
+      .map((line) => line.trim().split(/\s+/))
       .filter((parts) => parts.length >= 2 && parts[1] === "device")
       .map((parts) => parts[0]);
 
@@ -208,8 +208,8 @@ function runBinaryCommand(command, args, options = {}) {
     await runCommand(adb, ["-s", serial, "shell", "am", "force-stop", "com.splitstudio.hello"], { env, timeout: 15000 });
     await runCommand(adb, ["-s", serial, "shell", "monkey", "-p", "com.splitstudio.hello", "1"], { env, timeout: 15000 });
     await new Promise((resolvePromise) => setTimeout(resolvePromise, 1800));
-    const screenshot = await runCommand(adb, ["-s", serial, "exec-out", "screencap", "-p"], { env, timeout: 20000 });
-    const image = Buffer.from(screenshot.stdout, "binary").toString("base64");
+    const screenshot = await runBinaryCommand(adb, ["-s", serial, "exec-out", "screencap", "-p"], { env, timeout: 20000 });
+    const image = screenshot.stdout.toString("base64");
 
     return send(res, 200, {
       ok: true,
