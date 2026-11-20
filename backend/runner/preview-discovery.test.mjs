@@ -26,6 +26,16 @@ test("discovers PreviewParameter providers with nested annotation arguments", ()
   assert.equal(targets[0].name, "UserCard");
   assert.match(targets[0].render, /UserProvider\(\)\.values\.take\(5\)/);
   assert.match(targets[0].render, /for \(previewValue in/);
+
+  const namedProvider = discoverPreviewTargets(`
+    @Preview
+    @Composable
+    fun NamedUserCard(
+      @PreviewParameter(provider = NamedUserProvider::class) user: User
+    ) {}
+  `);
+  assert.equal(namedProvider[0]?.name, "NamedUserCard");
+  assert.match(namedProvider[0]?.render ?? "", /NamedUserProvider/);
 });
 
 test("marks unsupported required preview parameters without a provider", () => {
