@@ -77,7 +77,7 @@ export default function Home() {
   const [selectedScreen, setSelectedScreen] = useState("GreetingScreen");
   const previewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [buildStatus, setBuildStatus] = useState<"idle" | "building" | "success" | "error">("idle");
-  async function runPreview() {
+  async function runPreview(screenOverride?: string) {
     setRunning(true);
     setBuildStatus("building");
     setActiveTab("terminal");
@@ -87,7 +87,7 @@ export default function Home() {
       const response = await fetch("/api/runner/preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId: "hello-compose", code, screen: previewScreens.includes(selectedScreen) ? selectedScreen : previewScreens[0] }),
+        body: JSON.stringify({ projectId: "hello-compose", code, screen: screenOverride ?? (previewScreens.includes(selectedScreen) ? selectedScreen : previewScreens[0]) }),
       });
       const result = await response.json();
       if (!response.ok || !result.ok) {
@@ -229,7 +229,7 @@ export default function Home() {
           <div className="preview-header">
             <div className="preview-title"><Smartphone size={16} /><strong>PREVIEW</strong><span className="live-pill"><span /> DEVICE</span></div>
             <div className="preview-actions">
-              <select className="preview-screen-select" aria-label="Select Compose screen" value={previewScreens.includes(selectedScreen) ? selectedScreen : previewScreens[0] ?? ""} onChange={(event) => setSelectedScreen(event.target.value)}>{previewScreens.map((screen) => <option key={screen} value={screen}>{screen}</option>)}</select><label className="auto-preview-toggle"><input type="checkbox" checked={autoPreview} onChange={(event) => setAutoPreview(event.target.checked)} /> Auto</label><button className="device-select"><Smartphone size={13} /> Connected device <ChevronDown size={12} /></button>
+              <select className="preview-screen-select" aria-label="Select Compose screen" value={previewScreens.includes(selectedScreen) ? selectedScreen : previewScreens[0] ?? ""} onChange={(event) => { const nextScreen = event.target.value; setSelectedScreen(nextScreen); if (previewImage) void runPreview(nextScreen); }}>{previewScreens.map((screen) => <option key={screen} value={screen}>{screen}</option>)}</select><label className="auto-preview-toggle"><input type="checkbox" checked={autoPreview} onChange={(event) => setAutoPreview(event.target.checked)} /> Auto</label><button className="device-select"><Smartphone size={13} /> Connected device <ChevronDown size={12} /></button>
               <button className="icon-button small" onClick={() => setPreviewScale(previewScale === "100%" ? "85%" : "100%")} aria-label="Change preview scale"><Monitor size={15} /></button>
               <button className="icon-button small" onClick={() => setRunning(false)} aria-label="Refresh preview"><RefreshCw size={14} /></button>
               <button className="run-button" onClick={runPreview} disabled={running}><Play size={13} fill="currentColor" /> {running ? "Rendering…" : "Preview"}</button>
