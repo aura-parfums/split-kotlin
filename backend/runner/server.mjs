@@ -172,13 +172,64 @@ function runBinaryCommand(command, args, options = {}) {
   });
 }
 
+function extractFunctionParameters(source, openIndex) {
+  let depth = 0;
+  let quote = null;
+  let escaped = false;
+  let lineComment = false;
+  let blockComment = false;
+  for (let index = openIndex; index < source.length; index++) {
+    const char = source[index];
+    const next = source[index + 1];
+    if (lineComment) {
+      if (char === "\n") lineComment = false;
+      continue;
+    }
+    if (blockComment) {
+      if (char === "*" && next === "/") {
+        blockComment = false;
+        index++;
+      }
+      continue;
+    }
+    if (quote) {
+      if (escaped) escaped = false;
+      else if (char === "\\") escaped = true;
+      else if (char === quote) quote = null;
+      continue;
+    }
+    if (char === "/" && next === "/") {
+      lineComment = true;
+      index++;
+      continue;
+    }
+    if (char === "/" && next === "*") {
+      blockComment = true;
+      index++;
+      continue;
+    }
+    if (char === '"' || char === "'") {
+      quote = char;
+      continue;
+    }
+    if (char === "(") depth++;
+    if (char === ")") {
+      depth--;
+      if (depth === 0) return source.slice(openIndex + 1, index);
+    }
+  }
+  return null;
+}
+
 function discoverPreviewTargets(source) {
   const targets = [];
-  const declaration = /((?:@[A-Za-z_][A-Za-z0-9_.]*(?:\([^)]*\))?\s*)*)@Composable\s+(?:(?:private|internal)\s+)?fun\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(([^)]*)\)/g;
+  const declaration = /((?:@[A-Za-z_][A-Za-z0-9_.]*(?:\([^)]*\))?\s*)*)@Composable\s+(?:(?:private|internal)\s+)?fun\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(/g;
   for (const match of source.matchAll(declaration)) {
-    const annotations = match[1] || "";
     const name = match[2];
-    const parameters = match[3].trim().replace(/,\s*$/, "");
+    const openIndex = match.index + match[0].lastIndexOf("(");
+    const extracted = extractFunctionParameters(source, openIndex);
+    if (extracted === null) continue;
+    const parameters = extracted.trim().replace(/,\s*$/, "");
     const parameterParts = parameters ? parameters.split(",").map((parameter) => parameter.trim()).filter(Boolean) : [];
     if (!parameters || parameterParts.every((parameter) => parameter.includes("="))) {
       targets.push({ name, render: name + "()" });
@@ -194,7 +245,7 @@ function discoverPreviewTargets(source) {
       });
       continue;
     }
-    if (/@Preview(?:\s*\(|\s|$)/.test(annotations)) {
+    if (/@Preview(?:\s*\(|\s|$)/.test(match[1] || "")) {
       targets.push({ name, unsupported: true });
     }
   }
