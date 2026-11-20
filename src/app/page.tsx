@@ -325,7 +325,7 @@ fun ${safeName}() {
               <select className="preview-screen-select" aria-label="Select Compose screen" value={selectedScreen === "__all__" ? "__all__" : previewScreens.includes(selectedScreen) ? selectedScreen : previewScreens[0] ?? ""} onChange={(event) => { const nextScreen = event.target.value; setSelectedScreen(nextScreen); if (previewImage) void runPreview(nextScreen); }}><option value="__all__">All screens</option>{previewScreens.map((screen) => <option key={screen} value={screen}>{screen}</option>)}</select><label className="auto-preview-toggle"><input type="checkbox" checked={autoPreview} onChange={(event) => setAutoPreview(event.target.checked)} /> Auto</label><button className="device-select"><Smartphone size={13} /> Connected device <ChevronDown size={12} /></button>
               <button className="icon-button small" onClick={() => setPreviewScale(previewScale === "100%" ? "85%" : "100%")} aria-label="Change preview scale"><Monitor size={15} /></button>
               <button className="icon-button small" onClick={() => setRunning(false)} aria-label="Refresh preview"><RefreshCw size={14} /></button>
-              <button className="run-button" onClick={runPreview} disabled={running}><Play size={13} fill="currentColor" /> {running ? "Rendering…" : "Preview"}</button>
+              <button className="run-button" onClick={() => runPreview()} disabled={running}><Play size={13} fill="currentColor" /> {running ? "Rendering…" : "Preview"}</button>
             </div>
           </div>
           <div className="device-stage">
