@@ -145,9 +145,20 @@ export default function Home() {
   const [autoPreview, setAutoPreview] = useState(true);
   const [selectedScreen, setSelectedScreen] = useState("__all__");
   const previewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const previewInFlight = useRef(false);
+  const pendingAutoPreview = useRef(false);
   const interactionStart = useRef<{ x: number; y: number } | null>(null);
   const [buildStatus, setBuildStatus] = useState<"idle" | "building" | "success" | "error">("idle");
   async function runPreview(screenOverride?: string) {
+    if (previewInFlight.current) {
+      pendingAutoPreview.current = true;
+      return;
+    }
+    previewInFlight.current = true;
+    if (previewTimer.current) {
+      clearTimeout(previewTimer.current);
+      previewTimer.current = null;
+    }
     setRunning(true);
     setBuildStatus("building");
     setActiveTab("terminal");
@@ -176,7 +187,12 @@ export default function Home() {
       setBuildStatus("error");
       setBuildOutput(error instanceof Error ? error.message : "Unknown preview error.");
     } finally {
+      previewInFlight.current = false;
       setRunning(false);
+      if (pendingAutoPreview.current && autoPreview) {
+        pendingAutoPreview.current = false;
+        previewTimer.current = setTimeout(() => { void runPreview(); }, 450);
+      }
     }
   }
   async function sendDeviceInteraction(payload: { action: "tap"; x: number; y: number } | { action: "swipe"; x: number; y: number; x2: number; y2: number }) {
@@ -223,11 +239,13 @@ export default function Home() {
     workspaceTouched.current = true;
     setWorkspaceReady(true);
     setProjectFiles((current) => ({ ...current, [activeFile]: nextCode }));
-    if (autoPreview && previewImage) {
-      if (previewTimer.current) clearTimeout(previewTimer.current);
-      previewTimer.current = setTimeout(() => {
-        void runPreview();
-      }, 1400);
+    if (autoPreview) {
+      if (previewInFlight.current) {
+        pendingAutoPreview.current = true;
+      } else if (previewImage) {
+        if (previewTimer.current) clearTimeout(previewTimer.current);
+        previewTimer.current = setTimeout(() => { void runPreview(); }, 1400);
+      }
     }
   }
   const previewScreens = (() => {
@@ -388,7 +406,7 @@ fun ${safeName}() {
           <div className="preview-header">
             <div className="preview-title"><Smartphone size={16} /><strong>PREVIEW</strong><span className="live-pill"><span /> DEVICE</span></div>
             <div className="preview-actions">
-              <select className="preview-screen-select" aria-label="Select Compose screen" value={selectedScreen === "__all__" ? "__all__" : previewScreens.includes(selectedScreen) ? selectedScreen : previewScreens[0] ?? ""} onChange={(event) => { const nextScreen = event.target.value; setSelectedScreen(nextScreen); if (previewImage) void runPreview(nextScreen); }}><option value="__all__">All screens</option>{previewScreens.map((screen) => <option key={screen} value={screen}>{screen}</option>)}</select><label className="auto-preview-toggle"><input type="checkbox" checked={autoPreview} onChange={(event) => setAutoPreview(event.target.checked)} /> Auto</label><button className="device-select"><Smartphone size={13} /> Connected device <ChevronDown size={12} /></button>
+              <select className="preview-screen-select" aria-label="Select Compose screen" disabled={running} value={selectedScreen === "__all__" ? "__all__" : previewScreens.includes(selectedScreen) ? selectedScreen : previewScreens[0] ?? ""} onChange={(event) => { const nextScreen = event.target.value; setSelectedScreen(nextScreen); if (previewImage) void runPreview(nextScreen); }}><option value="__all__">All screens</option>{previewScreens.map((screen) => <option key={screen} value={screen}>{screen}</option>)}</select><label className="auto-preview-toggle"><input type="checkbox" checked={autoPreview} onChange={(event) => setAutoPreview(event.target.checked)} /> Auto</label><button className="device-select"><Smartphone size={13} /> Connected device <ChevronDown size={12} /></button>
               <button className="icon-button small" onClick={() => setPreviewScale(previewScale === "100%" ? "85%" : "100%")} aria-label="Change preview scale"><Monitor size={15} /></button>
               <button className="icon-button small" onClick={() => setRunning(false)} aria-label="Refresh preview"><RefreshCw size={14} /></button>
               <button className="run-button" onClick={() => runPreview()} disabled={running}><Play size={13} fill="currentColor" /> {running ? "Rendering…" : "Preview"}</button>
