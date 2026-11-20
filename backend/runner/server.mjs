@@ -170,8 +170,48 @@ async function createPreview(body, res) {
       return send(res, 400, { ok: false, error: "Kotlin source is missing or too large (200 KB max)." });
     }
     const projectDir = getProjectDir(body.projectId);
+    const screenNames = [...body.code.matchAll(/@Composable\\s+(?:(?:private|internal)\\s+)?fun\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*\\(\\s*\\)/g)]
+      .map((match) => match[1]);
+    const uniqueScreens = [...new Set(screenNames)];
+    if (!uniqueScreens.length) {
+      return send(res, 422, { ok: false, stage: "analysis", error: "No zero-argument @Composable functions were found. Add @Composable fun YourScreen() to preview a screen." });
+    }
+    const selectedScreen = typeof body.screen === "string" ? body.screen : uniqueScreens[0];
+    if (!uniqueScreens.includes(selectedScreen)) {
+      return send(res, 400, { ok: false, stage: "analysis", error: "Selected preview screen was not found in the current Kotlin source.", availableScreens: uniqueScreens });
+    }
+
     const sourcePath = join(projectDir, "app/src/main/java/com/splitstudio/hello/MainActivity.kt");
-    writeFileSync(sourcePath, body.code, "utf8");
+    const requiredImports = [
+      "import android.os.Bundle",
+      "import androidx.activity.ComponentActivity",
+      "import androidx.activity.compose.setContent",
+      "import androidx.compose.material3.MaterialTheme",
+    ];
+    let source = body.code;
+    const missingImports = requiredImports.filter((line) => !source.split("\\n").includes(line));
+    const packageLine = source.match(/^package [^\\r\\n]+/m);
+    if (missingImports.length) {
+      if (packageLine) {
+        const insertAt = source.indexOf("\\n", packageLine.index) + 1;
+        source = source.slice(0, insertAt) + missingImports.join("\\n") + "\\n" + source.slice(insertAt);
+      } else {
+        source = missingImports.join("\\n") + "\\n" + source;
+      }
+    }
+    source += `\\n
+class SplitStudioPreviewActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            MaterialTheme {
+                ${selectedScreen}()
+            }
+        }
+    }
+}
+`;
+    writeFileSync(sourcePath, source, "utf8");
 
     const sdk = process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT || "";
     const env = {
@@ -207,7 +247,7 @@ async function createPreview(body, res) {
     const serial = devices[0];
     await runCommand(adb, ["-s", serial, "install", "-r", apk], { env, timeout: 120000 });
     await runCommand(adb, ["-s", serial, "shell", "am", "force-stop", "com.splitstudio.hello"], { env, timeout: 15000 });
-    await runCommand(adb, ["-s", serial, "shell", "monkey", "-p", "com.splitstudio.hello", "1"], { env, timeout: 15000 });
+    await runCommand(adb, ["-s", serial, "shell", "am", "start", "-n", "com.splitstudio.hello/.SplitStudioPreviewActivity"], { env, timeout: 15000 });
     await new Promise((resolvePromise) => setTimeout(resolvePromise, 1800));
     const screenshot = await runBinaryCommand(adb, ["-s", serial, "exec-out", "screencap", "-p"], { env, timeout: 20000 });
     const image = screenshot.stdout.toString("base64");
@@ -217,7 +257,7 @@ async function createPreview(body, res) {
       device: serial,
       image: `data:image/png;base64,${image}`,
       output: build.stdout.slice(-50000),
-      message: "Compose app rendered on the connected Android device.",
+      message: "Selected Compose screen rendered on the connected Android device.",\n      availableScreens: uniqueScreens,\n      selectedScreen,
     });
   } catch (error) {
     return send(res, 422, { ok: false, stage: "build-or-device", error: error.message });
