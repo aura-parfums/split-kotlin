@@ -270,7 +270,9 @@ class SplitStudioPreviewActivity : ComponentActivity() {
       device: serial,
       image: `data:image/png;base64,${image}`,
       output: build.stdout.slice(-50000),
-      message: "Selected Compose screen rendered on the connected Android device.",\n      availableScreens: uniqueScreens,\n      selectedScreen,
+      message: "Selected Compose screen rendered on the connected Android device.",
+      availableScreens: uniqueScreens,
+      selectedScreen,
       renderedScreens: selectedScreens,
     });
   } catch (error) {
@@ -301,7 +303,16 @@ const server = createServer(async (req, res) => {
 
   if (!authorized(req)) return send(res, 401, { error: "Unauthorized." });
 
-  if (url.pathname === "/preview" && req.method === "POST") {\n    try {\n      const body = await readJson(req, 256 * 1024);\n      return await createPreview(body, res);\n    } catch (error) {\n      return send(res, 400, { ok: false, error: error.message });\n    }\n  }\n\n  if (url.pathname === "/build" && req.method === "POST") {
+  if (url.pathname === "/preview" && req.method === "POST") {
+    try {
+      const body = await readJson(req, 256 * 1024);
+      return await createPreview(body, res);
+    } catch (error) {
+      return send(res, 400, { ok: false, error: error.message });
+    }
+  }
+
+  if (url.pathname === "/build" && req.method === "POST") {
     try {
       const body = await readJson(req);
       const projectDir = getProjectDir(body.projectId);
