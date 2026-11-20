@@ -59,7 +59,7 @@ function getProjectDir(projectId) {
 
 function runGradle(projectDir, res) {
   const gradle = process.platform === "win32" ? "gradle.bat" : "gradle";
-  const args = [":app:assembleDebug", "--no-daemon", "--stacktrace"];
+  const args = [":app:assembleDebug", "--build-cache", "--stacktrace"];
   const sdk = process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT;
   const env = {
     PATH: process.env.PATH || "",
@@ -296,7 +296,7 @@ async function createPreview(body, res) {
       ANDROID_SDK_ROOT: sdk,
     };
     const gradle = process.platform === "win32" ? "gradle.bat" : "gradle";
-    const build = await runCommand(gradle, [":app:assembleDebug", "--no-daemon"], {
+    const build = await runCommand(gradle, [":app:assembleDebug", "--build-cache"], {
       cwd: projectDir, env, timeout: 5 * 60 * 1000,
     });
 
