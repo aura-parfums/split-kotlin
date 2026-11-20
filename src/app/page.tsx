@@ -80,6 +80,7 @@ const files = [
 export default function Home() {
   const workspaceStorageKey = "split-kotlin:hello-compose:files";
   const [projectFiles, setProjectFiles] = useState<Record<string, string>>({ "MainActivity.kt": starterCode });
+  const [buildOutput, setBuildOutput] = useState("Live Compose preview is ready to connect. Start the local Android runner and an emulator, then press Preview.");
   const [workspaceReady, setWorkspaceReady] = useState(false);
   const workspaceTouched = useRef(false);
   const [activeFile, setActiveFile] = useState("MainActivity.kt");
@@ -138,7 +139,7 @@ export default function Home() {
   const [bottomOpen, setBottomOpen] = useState(true);
   const [previewScale, setPreviewScale] = useState("100%");
   const [running, setRunning] = useState(false);
-  const [buildOutput, setBuildOutput] = useState("Live Compose preview is ready to connect. Start the local Android runner and an emulator, then press Preview.");
+
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [previewImages, setPreviewImages] = useState<Array<{ screen: string; image: string }>>([]);
   const [autoPreview, setAutoPreview] = useState(true);
