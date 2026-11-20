@@ -137,7 +137,33 @@ function runCommand(command, args, options = {}) {
   });
 }
 
-async function createPreview(body, res) {
+
+function runBinaryCommand(command, args, options = {}) {
+  return new Promise((resolvePromise, reject) => {
+    const child = spawn(command, args, {
+      cwd: options.cwd,
+      env: options.env || process.env,
+      shell: false,
+      windowsHide: true,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    const stdout = [];
+    let stderr = "";
+    child.stdout.on("data", (chunk) => stdout.push(chunk));
+    child.stderr.on("data", (chunk) => { stderr += chunk.toString(); });
+    const timeout = setTimeout(() => child.kill("SIGTERM"), options.timeout || 20000);
+    child.on("error", (error) => {
+      clearTimeout(timeout);
+      reject(error);
+    });
+    child.on("close", (code) => {
+      clearTimeout(timeout);
+      if (code === 0) resolvePromise({ stdout: Buffer.concat(stdout), stderr });
+      else reject(new Error((stderr || `${command} exited with ${code}`).slice(-8000)));
+    });
+  });
+}
+\nasync function createPreview(body, res) {
   try {
     if (typeof body.code !== "string" || body.code.length > 200_000) {
       return send(res, 400, { ok: false, error: "Kotlin source is missing or too large (200 KB max)." });
