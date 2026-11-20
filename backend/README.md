@@ -48,16 +48,17 @@ Open `http://localhost:3000`, start an emulator (or connect a USB-debugging-enab
 
 ## Preview pipeline
 
-1. Browser sends the current `MainActivity.kt` buffer to the Next.js server route.
-2. The server forwards it to the authenticated loopback runner.
-3. The runner writes only to the fixed starter source path.
-4. Gradle compiles the Compose app.
-5. ADB installs and launches it on the first available device.
-6. ADB captures a PNG screenshot; the browser displays that real Android frame.
+1. Browser sends `MainActivity.kt` and the other open Kotlin buffers to the Next.js server route.
+2. The server forwards the source files and selected preview target to the authenticated loopback runner.
+3. The runner validates filenames/packages, writes changed files into the fixed starter package, and generates a separate preview Activity.
+4. Gradle reuses its daemon and build cache to compile only what changed where possible.
+5. ADB installs the APK only when it changed, then launches each selected target.
+6. ADB captures PNG screenshots; the browser displays independent cards or a selected device frame.
+7. Browser taps/swipes are translated to ADB input commands, followed by a refreshed screenshot.
 
 ## Security and limitations
 
-- The runner binds to loopback and accepts a fixed project ID and source buffer, not arbitrary shell commands.
+- The runner binds to loopback and accepts a fixed project ID plus validated Kotlin source files (maximum 10 files and 1 MB combined), not arbitrary shell commands.
 - The runner token is server-side only. Do not expose it through a `NEXT_PUBLIC_*` variable.
 - Keep the runner private; do not expose port 4317 to the public internet.
 - The runner discovers zero-argument composables and `@Preview` composables. A single-parameter `@PreviewParameter(Provider::class)` is rendered as up to five provider values in a vertically scrollable screen; more complex parameter combinations are reported as unsupported. Up to 10 Kotlin files in the starter package can be edited together (1 MB combined source limit). The browser can forward taps and swipes to the connected device and receives a fresh screenshot after each gesture. Gradle daemon reuse and the build cache reduce repeat-build overhead, but every source change still triggers a Gradle build and Activity relaunch; this is not Android Studio's in-process recomposition. The workspace currently supports Kotlin source files only and does not yet provide language-server diagnostics.
