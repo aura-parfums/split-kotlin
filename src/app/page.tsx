@@ -116,7 +116,7 @@ export default function Home() {
         const restored = Object.fromEntries(
           result.files
             .filter((file: { path?: unknown; content?: unknown }) =>
-              typeof file.path === "string" && /^[A-Za-z_][A-Za-z0-9_]*\\.kt$/.test(file.path) &&
+              typeof file.path === "string" && /^[A-Za-z_][A-Za-z0-9_]*\.kt$/.test(file.path) &&
               file.path !== "SplitStudioPreviewActivity.kt" && typeof file.content === "string")
             .map((file: { path: string; content: string }) => [file.path, file.content])
         ) as Record<string, string>;
