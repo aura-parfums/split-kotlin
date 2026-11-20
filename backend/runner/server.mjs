@@ -213,7 +213,7 @@ async function createPreview(body, res) {
     if (totalSourceBytes > 1024 * 1024) {
       return send(res, 400, { ok: false, error: "Combined Kotlin source exceeds the 1 MB preview limit." });
     }
-    const combinedSource = [...fileMap.values()].join("\\n");
+    const combinedSource = [...fileMap.values()].join("\n");
     const previewTargets = discoverPreviewTargets(combinedSource);
     const uniqueScreens = previewTargets.map((target) => target.name);
     if (!uniqueScreens.length) {
