@@ -79,37 +79,15 @@ const files = [
 
 export default function Home() {
   const workspaceStorageKey = "split-kotlin:hello-compose:files";
-  const [projectFiles, setProjectFiles] = useState<Record<string, string>>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = localStorage.getItem(workspaceStorageKey);
-        if (saved) {
-          const parsed = JSON.parse(saved) as Record<string, unknown>;
-          if (parsed && typeof parsed["MainActivity.kt"] === "string" &&
-              Object.values(parsed).every((value) => typeof value === "string")) {
-            return parsed as Record<string, string>;
-          }
-        }
-      } catch {
-        // Ignore malformed local drafts and use the starter project.
-      }
-    }
-    return { "MainActivity.kt": starterCode };
-  });
-  const [hasLocalDraft] = useState(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      const saved = localStorage.getItem(workspaceStorageKey);
-      const parsed = saved ? JSON.parse(saved) as Record<string, unknown> : null;
-      return Boolean(parsed && typeof parsed["MainActivity.kt"] === "string" &&
-        Object.values(parsed).every((value) => typeof value === "string"));
-    } catch {
-      return false;
-    }
-  });
+  const [projectFiles, setProjectFiles] = useState<Record<string, string>>({ "MainActivity.kt": starterCode });
   const workspaceTouched = useRef(false);
+  const workspaceInitialized = useRef(false);
   const [activeFile, setActiveFile] = useState("MainActivity.kt");
   useEffect(() => {
+    if (!workspaceInitialized.current) {
+      workspaceInitialized.current = true;
+      return;
+    }
     try {
       localStorage.setItem(workspaceStorageKey, JSON.stringify(projectFiles));
     } catch {
@@ -117,26 +95,40 @@ export default function Home() {
     }
   }, [projectFiles]);
   useEffect(() => {
-    if (hasLocalDraft) return;
     let cancelled = false;
-    fetch("/api/runner/files", { cache: "no-store" })
-      .then((response) => response.json())
-      .then((result) => {
+    async function restoreWorkspace() {
+      if (workspaceTouched.current) return;
+      try {
+        const saved = localStorage.getItem(workspaceStorageKey);
+        const parsed = saved ? JSON.parse(saved) as Record<string, unknown> : null;
+        if (parsed && typeof parsed["MainActivity.kt"] === "string" &&
+            Object.values(parsed).every((value) => typeof value === "string")) {
+          if (!cancelled && !workspaceTouched.current) setProjectFiles(parsed as Record<string, string>);
+          return;
+        }
+      } catch {
+        // Ignore malformed local drafts and try the local runner instead.
+      }
+      if (cancelled || workspaceTouched.current) return;
+      try {
+        const response = await fetch("/api/runner/files", { cache: "no-store" });
+        const result = await response.json();
         if (cancelled || workspaceTouched.current || !result.ok || !Array.isArray(result.files) || !result.files.length) return;
         const restored = Object.fromEntries(
           result.files
             .filter((file: { path?: unknown; content?: unknown }) =>
-              typeof file.path === "string" && /^[A-Za-z_][A-Za-z0-9_]*\.kt$/.test(file.path) &&
+              typeof file.path === "string" && /^[A-Za-z_][A-Za-z0-9_]*\\.kt$/.test(file.path) &&
               file.path !== "SplitStudioPreviewActivity.kt" && typeof file.content === "string")
             .map((file: { path: string; content: string }) => [file.path, file.content])
         ) as Record<string, string>;
         if (typeof restored["MainActivity.kt"] === "string") setProjectFiles(restored);
-      })
-      .catch(() => {
-        // The starter and browser draft remain available while the local runner is offline.
-      });
+      } catch {
+        // The starter remains available while the local runner is offline.
+      }
+    }
+    void restoreWorkspace();
     return () => { cancelled = true; };
-  }, [hasLocalDraft]);
+  }, []);
   const code = projectFiles[activeFile] ?? "";
   const mainCode = projectFiles["MainActivity.kt"] ?? "";
   const [activeTab, setActiveTab] = useState<"problems" | "terminal">("terminal");
