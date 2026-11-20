@@ -25,6 +25,7 @@ jobs:
         run: |
           node --check backend/runner/server.mjs
           node --check backend/runner/preview-discovery.mjs
+          node --check backend/runner/compile-preview-fixture.mjs
       - name: Test Compose preview discovery
         run: node --test backend/runner/preview-discovery.test.mjs
       - name: Lint
