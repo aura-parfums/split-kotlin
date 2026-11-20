@@ -92,6 +92,7 @@ export default function Home() {
   const [autoPreview, setAutoPreview] = useState(true);
   const [selectedScreen, setSelectedScreen] = useState("__all__");
   const previewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const interactionStart = useRef<{ x: number; y: number } | null>(null);
   const [buildStatus, setBuildStatus] = useState<"idle" | "building" | "success" | "error">("idle");
   async function runPreview(screenOverride?: string) {
     setRunning(true);
@@ -125,6 +126,44 @@ export default function Home() {
       setRunning(false);
     }
   }
+  async function sendDeviceInteraction(payload: { action: "tap"; x: number; y: number } | { action: "swipe"; x: number; y: number; x2: number; y2: number }) {
+    try {
+      const response = await fetch("/api/runner/interact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.ok) throw new Error(result.error || "Device interaction failed.");
+    } catch (error) {
+      setBuildOutput(error instanceof Error ? error.message : "Device interaction failed.");
+    }
+  }
+  function handlePreviewPointerDown(event: React.PointerEvent<HTMLImageElement>) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    interactionStart.current = {
+      x: Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)),
+      y: Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height)),
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+  function handlePreviewPointerUp(event: React.PointerEvent<HTMLImageElement>) {
+    const start = interactionStart.current;
+    interactionStart.current = null;
+    if (!start) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const end = {
+      x: Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)),
+      y: Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height)),
+    };
+    const distance = Math.hypot(end.x - start.x, end.y - start.y);
+    if (distance > 0.035) {
+      void sendDeviceInteraction({ action: "swipe", ...start, x2: end.x, y2: end.y });
+    } else {
+      void sendDeviceInteraction({ action: "tap", x: end.x, y: end.y });
+    }
+  }
+
   function handleEditorChange(value: string | undefined) {
     const nextCode = value ?? "";
     setProjectFiles((current) => ({ ...current, [activeFile]: nextCode }));
@@ -306,7 +345,15 @@ fun ${safeName}() {
                 <div className="phone">
                   <div className="phone-screen">
                     {!previewImage && <div className="statusbar"><span>9:41</span><div className="dynamic-island" /><span className="status-icons"><Wifi size={12} /> ▰</span></div>}
-                    {previewImage ? <img className="real-device-capture" src={previewImage} alt="Live Android Compose preview" /> : <div className="android-content">
+                    {previewImage ? <img
+                      className="real-device-capture"
+                      src={previewImage}
+                      alt="Live Android Compose preview — tap or swipe to interact with the device"
+                      draggable={false}
+                      onPointerDown={handlePreviewPointerDown}
+                      onPointerUp={handlePreviewPointerUp}
+                      onPointerCancel={() => { interactionStart.current = null; }}
+                    /> : <div className="android-content">
                       <div className="android-placeholder-icon"><Code2 size={27} /></div>
                       <h2>Hello, Android!</h2>
                       <p>Your Compose UI will appear here<br />when the Android runtime is connected.</p>
