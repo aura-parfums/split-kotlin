@@ -21,6 +21,8 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install
+      - name: Check local runner syntax
+        run: node --check backend/runner/server.mjs
       - name: Lint
         run: npm run lint
       - name: Build web workspace
